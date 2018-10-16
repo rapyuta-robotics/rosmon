@@ -14,7 +14,11 @@ ROSInterface::ROSInterface(monitor::Monitor* monitor, LaunchInfo* launchInfo)
  : m_monitor(monitor)
  , m_launchInfo(launchInfo)
 {
-    m_nh = ros::NodeHandle("/");
+    if(launchInfo->robot_name.empty()) {
+        m_nh = ros::NodeHandle("~");
+    } else {
+        m_nh = ros::NodeHandle();
+    }
 
 	m_updateTimer = m_nh.createWallTimer(ros::WallDuration(1.0), boost::bind(&ROSInterface::update, this));
 
