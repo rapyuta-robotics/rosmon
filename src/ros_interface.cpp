@@ -14,15 +14,15 @@ ROSInterface::ROSInterface(monitor::Monitor* monitor, LaunchInfo* launchInfo)
  : m_monitor(monitor)
  , m_launchInfo(launchInfo)
 {
-	if(launchInfo->robot_name.empty()) {
+    if(launchInfo->robot_name.empty()) {
         m_nh = ros::NodeHandle("~");
     } else {
-	    m_nh = ros::NodeHandle("/" + launchInfo->robot_name);
+        m_nh = ros::NodeHandle();
     }
 
 	m_updateTimer = m_nh.createWallTimer(ros::WallDuration(1.0), boost::bind(&ROSInterface::update, this));
 
-	m_pub_state = m_nh.advertise<rosmon::State>("state", 10, true);
+	m_pub_state = m_nh.advertise<rosmon::State>("ros_monitor", 10, true);
 
 	m_srv_startStop = m_nh.advertiseService("start_stop", &ROSInterface::handleStartStop, this);
 }
