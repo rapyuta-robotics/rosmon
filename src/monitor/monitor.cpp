@@ -183,41 +183,45 @@ void Monitor::updateStats()
 
 	for(; it != end; ++it)
 	{
-		fs::path statPath = (*it) / "stat";
-		if(!fs::exists(statPath))
-			continue;
+		try {
+			fs::path statPath = (*it) / "stat";
+			if(!fs::exists(statPath))
+				continue;
 
-		process_info::ProcessStat stat;
-		if(!process_info::readStatFile(statPath.c_str(), &stat))
-			continue;
+			process_info::ProcessStat stat;
+			if(!process_info::readStatFile(statPath.c_str(), &stat))
+				continue;
 
-		// Find corresponding node by the process group ID
-		// (= process ID of the group leader process)
-		auto it = nodeMap.find(stat.pgrp);
-		if(it == nodeMap.end())
-			continue;
+			// Find corresponding node by the process group ID
+			// (= process ID of the group leader process)
+			auto it = nodeMap.find(stat.pgrp);
+			if(it == nodeMap.end())
+				continue;
 
-		auto& node = it->second;
+			auto& node = it->second;
 
-		// We need to store the stats and subtract the last one to get a time
-		// delta
-		auto infoIt = m_processInfos.find(stat.pid);
-		if(infoIt == m_processInfos.end())
-		{
-			ProcessInfo info;
-			info.stat = stat;
-			info.active = true;
-			m_processInfos[stat.pid] = info;
-			continue;
+			// We need to store the stats and subtract the last one to get a time
+			// delta
+			auto infoIt = m_processInfos.find(stat.pid);
+			if(infoIt == m_processInfos.end())
+			{
+				ProcessInfo info;
+				info.stat = stat;
+				info.active = true;
+				m_processInfos[stat.pid] = info;
+				continue;
+			}
+
+			const auto& oldStat = infoIt->second.stat;
+
+			node->addCPUTime(stat.utime - oldStat.utime, stat.stime - oldStat.stime);
+			node->addMemory(stat.mem_rss);
+
+			infoIt->second.active = true;
+			infoIt->second.stat = stat;
+		} catch (const boost::filesystem::filesystem_error& ex) {
+			std::cout << ex.what() << std::endl;
 		}
-
-		const auto& oldStat = infoIt->second.stat;
-
-		node->addCPUTime(stat.utime - oldStat.utime, stat.stime - oldStat.stime);
-		node->addMemory(stat.mem_rss);
-
-		infoIt->second.active = true;
-		infoIt->second.stat = stat;
 	}
 
 	for(auto& node : m_nodes)
