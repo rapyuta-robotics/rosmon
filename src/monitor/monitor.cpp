@@ -181,13 +181,13 @@ void Monitor::updateStats()
 	for(auto& procInfo : m_processInfos)
 		procInfo.second.active = false;
 
-	for(; it != end; ++it)
-	{
+	for (; it != end; ++it) {
         fs::path statPath;
 		try {
 			statPath = (*it) / "stat";
-			if(!fs::exists(statPath))
-				continue;
+			if(!fs::exists(statPath)) {
+                continue;
+            }
 		} catch (const boost::filesystem::filesystem_error& ex) {
 			std::cout << ex.what() << std::endl;
 			std::cout << ex.code().value() << std::endl;
