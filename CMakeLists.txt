@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
 	pluginlib
 	rospack
 	rqt_gui
+	rosfmt
 	rqt_gui_cpp
 )
 
@@ -70,7 +71,7 @@ if(BUILD_FOR_COVERAGE)
 	endif()
 endif()
 
-add_subdirectory(contrib/fmt)
+# add_subdirectory(contrib/fmt)
 
 add_library(rosmon_launch_config
 	src/launch/node.cpp
@@ -85,7 +86,6 @@ target_link_libraries(rosmon_launch_config
 	${TinyXML_LIBRARIES}
 	${Boost_LIBRARIES}
 	${Python_LIBRARIES}
-	rosmon_fmt
 	yaml-cpp
 )
 
