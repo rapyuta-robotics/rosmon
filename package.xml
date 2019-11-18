@@ -26,6 +26,7 @@
 
 	<build_depend>python</build_depend>
 	<build_depend>qtbase5-dev</build_depend>
+	<build_depend>rosfmt</build_depend>
 
 	<test_depend>python-rospkg</test_depend>
 	<test_depend>rostest</test_depend>
