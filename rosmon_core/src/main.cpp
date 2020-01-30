@@ -70,6 +70,11 @@ void usage()
 		"  --log=FILE      Write log file to FILE\n"
 		"  --name=NAME     Use NAME as ROS node name. By default, an anonymous\n"
 		"                  name is chosen.\n"
+		"  --robot=ROBOT  Use ROBOT as name of robot publishing. By default, empty\n"
+		"  --launch-group=GROUP\n"
+		"                 Use GROUP as name of the launch group. By default, empty\n"
+		"  --launch-config=CONFIG\n"
+		"                 Use CONFIG as name of the launch config. By default, empty\n"
 		"  --no-start      Don't automatically start the nodes in the beginning\n"
 		"  --stop-timeout=SECONDS\n"
 		"                  Kill a process if it is still running this long\n"
@@ -128,6 +133,9 @@ static const struct option OPTIONS[] = {
 	{"list-args", no_argument, nullptr, 'L'},
 	{"log",  required_argument, nullptr, 'l'},
 	{"name", required_argument, nullptr, 'n'},
+	{"robot", required_argument, nullptr, 'r'},
+	{"launch-group", required_argument, nullptr, 'g'},
+	{"launch-config", required_argument, nullptr, 'c'},
 	{"no-start", no_argument, nullptr, 'S'},
 	{"stop-timeout", required_argument, nullptr, 's'},
 	{"disable-diagnostics", no_argument, nullptr, 'D'},
@@ -147,6 +155,7 @@ enum Action {
 int main(int argc, char** argv)
 {
 	std::string name;
+	rosmon::LaunchInfo launchInfo;
 	std::string logFile;
 	std::string launchFilePath;
 
@@ -177,6 +186,15 @@ int main(int argc, char** argv)
 				return 0;
 			case 'n':
 				name = optarg;
+				break;
+			case 'r':
+				launchInfo.robot_name = optarg;
+				break;
+			case 'g':
+				launchInfo.launch_group = optarg;
+				break;
+			case 'c':
+				launchInfo.launch_config = optarg;
 				break;
 			case 'l':
 				logFile = optarg;
@@ -470,7 +488,7 @@ int main(int argc, char** argv)
 	}
 
 	// ROS interface
-    rosmon::ROSInterface rosInterface(&monitor, !disableDiagnostics, diagnosticsPrefix);
+    rosmon::ROSInterface rosInterface(&monitor, &launchInfo, !disableDiagnostics, diagnosticsPrefix);
 
 	ros::WallDuration waitDuration(0.1);
 
