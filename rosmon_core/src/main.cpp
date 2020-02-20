@@ -135,7 +135,7 @@ static const struct option OPTIONS[] = {
 	{"name", required_argument, nullptr, 'n'},
 	{"robot", required_argument, nullptr, 'r'},
 	{"launch-group", required_argument, nullptr, 'g'},
-	{"launch-config", required_argument, nullptr, 'c'},
+	{"launch-config", required_argument, nullptr, 'z'},
 	{"no-start", no_argument, nullptr, 'S'},
 	{"stop-timeout", required_argument, nullptr, 's'},
 	{"disable-diagnostics", no_argument, nullptr, 'D'},
@@ -193,7 +193,7 @@ int main(int argc, char** argv)
 			case 'g':
 				launchInfo.launch_group = optarg;
 				break;
-			case 'c':
+			case 'z':
 				launchInfo.launch_config = optarg;
 				break;
 			case 'l':
