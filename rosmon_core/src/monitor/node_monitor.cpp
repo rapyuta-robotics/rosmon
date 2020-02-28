@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include <sstream>
+
 #include <fcntl.h>
 #include <glob.h>
 #include <pty.h>
@@ -197,7 +198,7 @@ void NodeMonitor::start()
                         m_processWorkingDirectoryCreated = true;
                 }
 	}
-        
+
 	ROS_INFO("rosmon: starting '%s'", m_launchNode->name().c_str());
 
 	if(!m_firstStart)
@@ -574,10 +575,10 @@ void NodeMonitor::gatherCoredump(int signal)
 
 	std::string coreGlob = boost::find_format_all_copy(std::string(core_pattern), corePatternFormatFinder, formatter);
 
-	// If the pattern is not absolute, it is relative to our node's cwd. 
+	// If the pattern is not absolute, it is relative to our node's cwd.
 	if(coreGlob[0] != '/')
 		coreGlob = m_processWorkingDirectory + "/" + coreGlob;
-        
+
 	log("Determined pattern '{}'", coreGlob);
 
 	glob_t results;
@@ -608,8 +609,7 @@ void NodeMonitor::gatherCoredump(int signal)
 	ss << "gdb " << m_launchNode->executable() << " " << coreFile;
 
 	m_debuggerCommand = ss.str();
-        
-        
+
         time_t t = time(nullptr);
         tm currentTime;
         memset(&currentTime, 0, sizeof(currentTime));
