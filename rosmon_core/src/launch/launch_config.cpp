@@ -388,7 +388,7 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 
         if(m_respawnAll || respawn)
 	{
-		node->setRespawn(m_respawnAll || respawn);
+		node->setRespawn(m_respawnAll || ctx.parseBool(respawn, element->Row()));
 
 		if(respawnDelay)
 		{

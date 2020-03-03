@@ -106,7 +106,7 @@ public:
 	void setRemap(const std::string& from, const std::string& to);
 	const std::map<std::string, std::string>& remappings()
 	{ return m_remappings; }
-        
+
 	template<typename... Args>
 	ParseException error(const char* fmt, const Args& ... args) const
 	{

@@ -463,7 +463,7 @@ int main(int argc, char** argv)
 		fmt::print("No ROS nodes to be launched. Finished...\n");
 		return 0;
 	}
-            
+    
 	// Should we automatically start the nodes?
 	if(startNodes)
 		monitor.start();
