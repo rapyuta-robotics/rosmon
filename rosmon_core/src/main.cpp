@@ -75,9 +75,9 @@ void usage()
 		"                 Use GROUP as name of the launch group. By default, empty\n"
 		"  --launch-config=CONFIG\n"
 		"                 Use CONFIG as name of the launch config. By default, empty\n"
-                "  --respawn-all=BOOL\n"
-		"                  Use BOOL as whether respawn will be set to true or false\n" 
-                "                  for all nodes.\n"
+                "  --respawn-attr=force_true|force_false\n"
+		"                  Force all nodes in launch group to respawn or not respawn.\n"
+                "                  By default, nodes won't respawn.\n"
 		"  --no-start      Don't automatically start the nodes in the beginning\n"
 		"  --stop-timeout=SECONDS\n"
 		"                  Kill a process if it is still running this long\n"
@@ -270,7 +270,15 @@ int main(int argc, char** argv)
 				diagnosticsPrefix = std::string(optarg);
 				break;
                         case 'R':
-                                respawnAll = optarg && strcmp(optarg,"true")==0;
+                                if (optarg && (strcmp(optarg,"force_true")==0 || strcmp(optarg,"force_false")==0))
+                                {
+                                        respawnAll = strcmp(optarg,"force_true")==0;
+                                }
+                                else
+                                {
+                                        fmt::print(stderr, "Bad value for --respawn-attr argument: '{}'\n", optarg);
+					return 1;
+                                }
                                 break;
 		}
 	}
@@ -463,7 +471,7 @@ int main(int argc, char** argv)
 		fmt::print("No ROS nodes to be launched. Finished...\n");
 		return 0;
 	}
-    
+
 	// Should we automatically start the nodes?
 	if(startNodes)
 		monitor.start();
