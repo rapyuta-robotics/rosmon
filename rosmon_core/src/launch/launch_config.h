@@ -106,7 +106,7 @@ public:
 	void setRemap(const std::string& from, const std::string& to);
 	const std::map<std::string, std::string>& remappings()
 	{ return m_remappings; }
-
+        
 	template<typename... Args>
 	ParseException error(const char* fmt, const Args& ... args) const
 	{
@@ -164,8 +164,9 @@ public:
 	void setArgument(const std::string& name, const std::string& value);
 
 	void setDefaultStopTimeout(double timeout);
-    void setDefaultCPULimit(double CPULimit);
-    void setDefaultMemoryLimit(uint64_t memoryLimit);
+        void setDefaultCPULimit(double CPULimit);
+        void setDefaultMemoryLimit(uint64_t memoryLimit);
+        void setRespawnAll(bool respawnAll);
 
 	void parse(const std::string& filename, bool onlyArguments = false);
 	void parseString(const std::string& input, bool onlyArguments = false);
@@ -237,6 +238,8 @@ private:
 	double m_defaultStopTimeout{DEFAULT_STOP_TIMEOUT};
     uint64_t m_defaultMemoryLimit{DEFAULT_MEMORY_LIMIT};
     double m_defaultCPULimit{DEFAULT_CPU_LIMIT};
+    
+    bool m_respawnAll;
 };
 
 }

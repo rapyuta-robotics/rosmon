@@ -151,6 +151,11 @@ void LaunchConfig::setDefaultMemoryLimit(uint64_t memoryLimit)
     m_defaultMemoryLimit = memoryLimit;
 }
 
+void LaunchConfig::setRespawnAll(bool respawnAll)
+{
+    m_respawnAll = respawnAll;
+}
+
 void LaunchConfig::parse(const std::string& filename, bool onlyArguments)
 {
 	m_rootContext.setFilename(filename);
@@ -276,7 +281,7 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 	const char* type = element->Attribute("type");
 	const char* args = element->Attribute("args");
 	const char* ns = element->Attribute("ns");
-	const char* respawn = element->Attribute("respawn");
+        const char* respawn = element->Attribute("respawn");
 	const char* respawnDelay = element->Attribute("respawn_delay");
 	const char* required = element->Attribute("required");
 	const char* launchPrefix = element->Attribute("launch-prefix");
@@ -381,9 +386,9 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 	if(!fullNamespace.empty())
 		node->setNamespace(fullNamespace);
 
-	if(respawn)
+        if(m_respawnAll || respawn)
 	{
-		node->setRespawn(ctx.parseBool(respawn, element->Row()));
+		node->setRespawn(m_respawnAll || respawn);
 
 		if(respawnDelay)
 		{
