@@ -173,30 +173,29 @@ void NodeMonitor::start()
 	if(running())
 		return;
 
-        if(m_launchNode->coredumpsEnabled() && g_coreIsRelative && m_processWorkingDirectory.empty())
+	if(m_launchNode->coredumpsEnabled() && g_coreIsRelative && m_processWorkingDirectory.empty())
 	{
-                if (const char* logDir = std::getenv("ROSMON_LOG_PATH")) 
-                {
-                        std::string dir(logDir);
-                        dir = dir + "/rosmon/core_dumps";
-                        if (chdir(dir.c_str()) == 0 || mkdir(dir.c_str(), 0777) == 0) 
-                        {
-                                m_processWorkingDirectory = dir;
-                                m_processWorkingDirectoryCreated = true;
-                        } 
-                        else 
-                        {
-                                perror("Could not create rosmon/core_dumps directory");
-                        }
-                }
-                else 
-                {
-                        char tmpfile[256];
-                        strncpy(tmpfile, "/tmp/rosmon-node-XXXXXX", sizeof(tmpfile));
-                        tmpfile[sizeof(tmpfile)-1] = 0;
-                        m_processWorkingDirectory = mkdtemp(tmpfile);
-                        m_processWorkingDirectoryCreated = true;
-                }
+		if (const char* logDir = std::getenv("ROSMON_LOG_PATH")) 
+		{
+			std::string dir(logDir);
+			dir = dir + "/rosmon/core_dumps";
+			if (chdir(dir.c_str()) == 0 || mkdir(dir.c_str(), 0777) == 0) 
+			{
+				m_processWorkingDirectory = dir;
+				m_processWorkingDirectoryCreated = true;
+			} 
+			else 
+			{
+				perror("Could not create rosmon/core_dumps directory");
+			}
+		}
+		else 
+		{
+			char tmpfile[256];
+			strncpy(tmpfile, "/tmp/rosmon-node-XXXXXX", sizeof(tmpfile));
+			tmpfile[sizeof(tmpfile)-1] = 0;
+			m_processWorkingDirectory = mkdtemp(tmpfile);
+                        					}
 	}
 
 	ROS_INFO("rosmon: starting '%s'", m_launchNode->name().c_str());
@@ -611,17 +610,17 @@ void NodeMonitor::gatherCoredump(int signal)
 	m_debuggerCommand = ss.str();
 
         time_t t = time(nullptr);
-        tm currentTime;
-        memset(&currentTime, 0, sizeof(currentTime));
-        localtime_r(&t, &currentTime);
+	tm currentTime;
+	memset(&currentTime, 0, sizeof(currentTime));
+	localtime_r(&t, &currentTime);
 
-        char buf[256];
-        strftime(buf, sizeof(buf), "_%Y_%m_%d_%H_%M_%S", &currentTime);
-        std::string core_rename = coreGlob + "_" + m_launchNode->name() + std::string(buf);
+	char buf[256];
+	strftime(buf, sizeof(buf), "_%Y_%m_%d_%H_%M_%S", &currentTime);
+	std::string core_rename = coreGlob + "_" + m_launchNode->name() + std::string(buf);
         
-        if (rename(const_cast<char*>(coreGlob.c_str()), const_cast<char*>(core_rename.c_str())) != 0) {
-                perror("Error renaming core files");
-        }
+	if (rename(const_cast<char*>(coreGlob.c_str()), const_cast<char*>(core_rename.c_str())) != 0) {
+		perror("Error renaming core files");
+	}
 }
 
 void NodeMonitor::launchDebugger()

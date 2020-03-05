@@ -361,7 +361,7 @@ int main(int argc, char** argv)
 			strftime(buf, sizeof(buf), "/tmp/rosmon_%Y_%m_%d_%H_%M_%S.log", &currentTime);
 
 			logFile = buf;
-                }
+		}
 
 		logger.reset(new rosmon::Logger(logFile, flushLog));
 	}
