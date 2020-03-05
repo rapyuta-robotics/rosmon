@@ -151,9 +151,10 @@ void LaunchConfig::setDefaultMemoryLimit(uint64_t memoryLimit)
     m_defaultMemoryLimit = memoryLimit;
 }
 
-void LaunchConfig::setRespawnAll(bool respawnAll)
+void LaunchConfig::setRespawnBehaviour(bool respawnAll, bool respawnObey)
 {
     m_respawnAll = respawnAll;
+    m_respawnObey = respawnObey;
 }
 
 void LaunchConfig::parse(const std::string& filename, bool onlyArguments)
@@ -281,7 +282,7 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 	const char* type = element->Attribute("type");
 	const char* args = element->Attribute("args");
 	const char* ns = element->Attribute("ns");
-        const char* respawn = element->Attribute("respawn");
+	const char* respawn = element->Attribute("respawn");
 	const char* respawnDelay = element->Attribute("respawn_delay");
 	const char* required = element->Attribute("required");
 	const char* launchPrefix = element->Attribute("launch-prefix");
@@ -386,26 +387,29 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 	if(!fullNamespace.empty())
 		node->setNamespace(fullNamespace);
 
-        if(m_respawnAll || respawn)
+	if (m_respawnObey && respawn) {
+		node->setRespawn(ctx.parseBool(respawn, element->Row()));
+	} 
+	else 
 	{
-		node->setRespawn(m_respawnAll || ctx.parseBool(respawn, element->Row()));
-
-		if(respawnDelay)
-		{
-			double seconds;
-			try
-			{
-				seconds = boost::lexical_cast<double>(ctx.evaluate(respawnDelay));
-			}
-			catch(boost::bad_lexical_cast&)
-			{
-				throw ctx.error("bad respawn_delay value '{}'", respawnDelay);
-			}
-
-			node->setRespawnDelay(ros::WallDuration(seconds));
-		}
+		node->setRespawn(m_respawnAll);
 	}
+        
+	if(m_respawnObey && respawn && ctx.parseBool(respawn, element->Row()) && m_respawnAll && respawnDelay)
+        {
+		double seconds;
+		try
+		{
+                        seconds = boost::lexical_cast<double>(ctx.evaluate(respawnDelay));
+		}
+                catch(boost::bad_lexical_cast&)
+                {
+                        throw ctx.error("bad respawn_delay value '{}'", respawnDelay);
+                }
 
+                node->setRespawnDelay(ros::WallDuration(seconds));
+        }
+        
 	if(required && ctx.parseBool(required, element->Row()))
 	{
 		node->setRequired(true);
