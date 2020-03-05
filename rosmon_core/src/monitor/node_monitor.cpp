@@ -609,7 +609,7 @@ void NodeMonitor::gatherCoredump(int signal)
 
 	m_debuggerCommand = ss.str();
 
-        time_t t = time(nullptr);
+	time_t t = time(nullptr);
 	tm currentTime;
 	memset(&currentTime, 0, sizeof(currentTime));
 	localtime_r(&t, &currentTime);
