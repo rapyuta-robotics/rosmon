@@ -162,7 +162,7 @@ int main(int argc, char** argv)
 	Action action = ACTION_LAUNCH;
 	bool enableUI = true;
 	bool flushLog = false;
-        bool respawnAll = false;
+	bool respawnAll = false;
 	bool respawnObey = true;
 	bool startNodes = true;
 	double stopTimeout = rosmon::launch::LaunchConfig::DEFAULT_STOP_TIMEOUT;
