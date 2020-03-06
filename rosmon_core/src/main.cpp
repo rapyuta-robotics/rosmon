@@ -332,7 +332,6 @@ int main(int argc, char** argv)
 		std::string logFile; 
 
 		// Open logger
-		//if(const char* logDir = std::getenv("ROSMON_LOG_PATH"))
                 if(!logDir.empty())
 		{
                         if (logDir.back() == '/')
