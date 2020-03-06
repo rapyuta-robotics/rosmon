@@ -69,6 +69,7 @@ void usage()
 		"  --flush-log     Flush logfile after writing an entry\n"
 		"  --flush-stdout  Flush stdout after writing an entry\n"
 		"  --help          This help screen\n"
+		"  --log=DIR       Write log file to file in DIR\n"
 		"  --name=NAME     Use NAME as ROS node name. By default, an anonymous\n"
 		"                  name is chosen.\n"
 		"  --robot=ROBOT  Use ROBOT as name of robot publishing. By default, empty\n"
@@ -153,6 +154,7 @@ int main(int argc, char** argv)
 {
 	std::string name;
 	rosmon::LaunchInfo launchInfo;
+	std::string logDir;
 	std::string launchFilePath;
 
 	Action action = ACTION_LAUNCH;
@@ -190,6 +192,9 @@ int main(int argc, char** argv)
 				break;
 			case 'z':
 				launchInfo.launch_config = optarg;
+				break;
+			case 'l':
+				logDir = optarg;
 				break;
 			case 'L':
 				action = ACTION_LIST_ARGS;
@@ -324,19 +329,24 @@ int main(int argc, char** argv)
 		// Disable direct logging to stdout
 		ros::console::backend::function_print = nullptr;
                 
-                std::string logFile; 
+		std::string logFile; 
 
 		// Open logger
-		if(const char* logDir = std::getenv("ROSMON_LOG_PATH"))
+		//if(const char* logDir = std::getenv("ROSMON_LOG_PATH"))
+                if(!logDir.empty())
 		{
-                        std::string dir(logDir);
-                        dir = dir + "/rosmon";
-                        if (chdir(dir.c_str()) == 0 || mkdir(dir.c_str(), 0777) == 0) 
+                        if (logDir.back() == '/')
                         {
-                                dir = dir + "/roslogs";
-                                if (chdir(dir.c_str()) == 0 || mkdir(dir.c_str(), 0777) == 0) 
+                                logDir.pop_back();
+                        }
+                        setenv("ROSMON_LOG_PATH", logDir.c_str(), 1);
+                        logDir = logDir + "/rosmon";
+                        if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
+                        {
+                                logDir = logDir + "/roslogs";
+                                if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
                                 {
-                                        logFile = dir + "/" + launchInfo.launch_group + "_" + launchInfo.launch_config + "_" + launchInfo.robot_name + ".log";
+                                        logFile = logDir + "/" + launchInfo.launch_group + "_" + launchInfo.launch_config + "_" + launchInfo.robot_name + ".log";
                                 }
                                 else
                                 {

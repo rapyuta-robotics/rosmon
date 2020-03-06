@@ -195,7 +195,7 @@ void NodeMonitor::start()
 			strncpy(tmpfile, "/tmp/rosmon-node-XXXXXX", sizeof(tmpfile));
 			tmpfile[sizeof(tmpfile)-1] = 0;
 			m_processWorkingDirectory = mkdtemp(tmpfile);
-                        					}
+		}
 	}
 
 	ROS_INFO("rosmon: starting '%s'", m_launchNode->name().c_str());
