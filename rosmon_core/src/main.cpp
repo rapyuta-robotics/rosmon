@@ -357,8 +357,8 @@ int main(int argc, char** argv)
                                 perror("Could not create rosmon directory");
                         }
 		} 
-                else
-                {
+		else
+		{
 			// Log to /tmp by default
 
 			time_t t = time(nullptr);
