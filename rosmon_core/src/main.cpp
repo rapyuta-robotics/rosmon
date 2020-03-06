@@ -332,7 +332,7 @@ int main(int argc, char** argv)
 		std::string logFile; 
 
 		// Open logger
-                if(!logDir.empty())
+		if(!logDir.empty())
 		{
                         if (logDir.back() == '/')
                         {
