@@ -387,7 +387,8 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 	if(!fullNamespace.empty())
 		node->setNamespace(fullNamespace);
 
-	if (m_respawnObey && respawn) {
+	if (m_respawnObey && respawn)
+	{
 		node->setRespawn(ctx.parseBool(respawn, element->Row()));
 	} 
 	else 
@@ -396,19 +397,19 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 	}
         
 	if(m_respawnObey && respawn && ctx.parseBool(respawn, element->Row()) && m_respawnAll && respawnDelay)
-        {
+	{
 		double seconds;
 		try
 		{
-                        seconds = boost::lexical_cast<double>(ctx.evaluate(respawnDelay));
+			seconds = boost::lexical_cast<double>(ctx.evaluate(respawnDelay));
 		}
-                catch(boost::bad_lexical_cast&)
-                {
-                        throw ctx.error("bad respawn_delay value '{}'", respawnDelay);
-                }
+		catch(boost::bad_lexical_cast&)
+		{
+			throw ctx.error("bad respawn_delay value '{}'", respawnDelay);
+		}
 
-                node->setRespawnDelay(ros::WallDuration(seconds));
-        }
+		node->setRespawnDelay(ros::WallDuration(seconds));
+	}
         
 	if(required && ctx.parseBool(required, element->Row()))
 	{
