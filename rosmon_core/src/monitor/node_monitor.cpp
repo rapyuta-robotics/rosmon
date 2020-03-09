@@ -248,7 +248,7 @@ void NodeMonitor::start()
 			if(g_coreIsRelative)
 			{
 				args.push_back(strdup("--coredump-relative"));
-				std::string dir = m_processWorkingDirectory + "/core_dumps";
+				std::string dir = m_processWorkingDirectory.find("rosmon") != std::string::npos ? m_processWorkingDirectory + "/core_dumps" : m_processWorkingDirectory;
 				args.push_back(strdup(dir.c_str()));
 			}
 		}
@@ -575,7 +575,7 @@ void NodeMonitor::gatherCoredump(int signal)
 
 	// If the pattern is not absolute, it is relative to our node's cwd.
 	if(coreGlob[0] != '/')
-		coreGlob = m_processWorkingDirectory + "/core_dumps/" + coreGlob;
+		coreGlob = m_processWorkingDirectory.find("rosmon") != std::string::npos ? m_processWorkingDirectory + "/core_dumps/" + coreGlob : m_processWorkingDirectory + "/" + coreGlob;
 
 	log("Determined pattern '{}'", coreGlob);
 
