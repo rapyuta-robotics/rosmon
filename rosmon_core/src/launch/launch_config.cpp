@@ -396,7 +396,7 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 		node->setRespawn(m_respawnAll);
 	}
         
-	if(m_respawnObey && respawn && ctx.parseBool(respawn, element->Row()) && m_respawnAll && respawnDelay)
+	if(((m_respawnObey && respawn && ctx.parseBool(respawn, element->Row())) || m_respawnAll) && respawnDelay)
 	{
 		double seconds;
 		try
