@@ -166,6 +166,8 @@ public:
 	void setDefaultStopTimeout(double timeout);
     void setDefaultCPULimit(double CPULimit);
     void setDefaultMemoryLimit(uint64_t memoryLimit);
+    
+    void setWorkingDirectory(std::string);
 
 	void parse(const std::string& filename, bool onlyArguments = false);
 	void parseString(const std::string& input, bool onlyArguments = false);
@@ -237,6 +239,8 @@ private:
 	double m_defaultStopTimeout{DEFAULT_STOP_TIMEOUT};
     uint64_t m_defaultMemoryLimit{DEFAULT_MEMORY_LIMIT};
     double m_defaultCPULimit{DEFAULT_CPU_LIMIT};
+    
+    std::string m_workingDirectory;
 };
 
 }

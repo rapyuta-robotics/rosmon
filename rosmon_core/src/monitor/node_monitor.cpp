@@ -173,15 +173,13 @@ void NodeMonitor::start()
 	if(running())
 		return;
 
-	if(m_launchNode->coredumpsEnabled() && g_coreIsRelative && m_processWorkingDirectory.empty())
+	if(m_launchNode->coredumpsEnabled() && g_coreIsRelative)
 	{
-		if (const char* logDir = std::getenv("ROSMON_LOG_PATH")) 
+		if (!m_processWorkingDirectory.empty()) 
 		{
-			std::string dir(logDir);
-			dir = dir + "/rosmon/core_dumps";
+			std::string dir = m_processWorkingDirectory + "/core_dumps";
 			if (chdir(dir.c_str()) == 0 || mkdir(dir.c_str(), 0777) == 0) 
 			{
-				m_processWorkingDirectory = dir;
 				m_processWorkingDirectoryCreated = true;
 			} 
 			else 
@@ -250,7 +248,8 @@ void NodeMonitor::start()
 			if(g_coreIsRelative)
 			{
 				args.push_back(strdup("--coredump-relative"));
-				args.push_back(strdup(m_processWorkingDirectory.c_str()));
+                                std::string dir = m_processWorkingDirectory + "/core_dumps";
+				args.push_back(strdup(dir.c_str()));
 			}
 		}
 
@@ -576,7 +575,7 @@ void NodeMonitor::gatherCoredump(int signal)
 
 	// If the pattern is not absolute, it is relative to our node's cwd.
 	if(coreGlob[0] != '/')
-		coreGlob = m_processWorkingDirectory + "/" + coreGlob;
+		coreGlob = m_processWorkingDirectory + "/core_dumps/" + coreGlob;
 
 	log("Determined pattern '{}'", coreGlob);
 

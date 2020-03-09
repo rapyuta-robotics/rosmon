@@ -342,10 +342,10 @@ int main(int argc, char** argv)
                         logDir = logDir + "/rosmon";
                         if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
                         {
-                                logDir = logDir + "/roslogs";
-                                if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
+                                std::string dir = logDir + "/roslogs";
+                                if (chdir(dir.c_str()) == 0 || mkdir(dir.c_str(), 0777) == 0) 
                                 {
-                                        logFile = logDir + "/" + launchInfo.launch_group + "_" + launchInfo.launch_config + "_" + launchInfo.robot_name + ".log";
+                                        logFile = dir + "/" + launchInfo.launch_group + "_" + launchInfo.launch_config + "_" + launchInfo.robot_name + ".log";
                                 }
                                 else
                                 {
@@ -381,6 +381,7 @@ int main(int argc, char** argv)
 	config->setDefaultStopTimeout(stopTimeout);
     config->setDefaultCPULimit(cpuLimit);
     config->setDefaultMemoryLimit(memoryLimit);
+    config->setWorkingDirectory(logDir);
 
 	// Parse launch file arguments from command line
 	for(int i = firstArg; i < argc; ++i)
