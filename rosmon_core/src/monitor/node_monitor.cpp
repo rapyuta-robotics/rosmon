@@ -248,7 +248,7 @@ void NodeMonitor::start()
 			if(g_coreIsRelative)
 			{
 				args.push_back(strdup("--coredump-relative"));
-                                std::string dir = m_processWorkingDirectory + "/core_dumps";
+				std::string dir = m_processWorkingDirectory + "/core_dumps";
 				args.push_back(strdup(dir.c_str()));
 			}
 		}
