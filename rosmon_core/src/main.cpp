@@ -338,7 +338,6 @@ int main(int argc, char** argv)
                         {
                                 logDir.pop_back();
                         }
-                        setenv("ROSMON_LOG_PATH", logDir.c_str(), 1);
                         logDir = logDir + "/rosmon";
                         if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
                         {
@@ -349,12 +348,12 @@ int main(int argc, char** argv)
                                 }
                                 else
                                 {
-                                         perror("Could not create rosmon/roslogs directory");
+					fmt::print(stderr, "Could not create rosmon/roslogs directory");
                                 }
                         }
                         else
                         {
-                                perror("Could not create rosmon directory");
+				fmt::print(stderr, "Could not create rosmon directory");
                         }
 		} 
 		else

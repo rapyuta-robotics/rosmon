@@ -178,13 +178,9 @@ void NodeMonitor::start()
 		if (!m_processWorkingDirectory.empty()) 
 		{
 			std::string dir = m_processWorkingDirectory + "/core_dumps";
-			if (chdir(dir.c_str()) == 0 || mkdir(dir.c_str(), 0777) == 0) 
+			if (!(chdir(dir.c_str()) == 0 || mkdir(dir.c_str(), 0777) == 0))
 			{
-				m_processWorkingDirectoryCreated = true;
-			} 
-			else 
-			{
-				perror("Could not create rosmon/core_dumps directory");
+				logTyped(LogEvent::Type::Warning, "Could not create rosmon/core_dumps directory");
 			}
 		}
 		else 
@@ -248,7 +244,7 @@ void NodeMonitor::start()
 			if(g_coreIsRelative)
 			{
 				args.push_back(strdup("--coredump-relative"));
-				std::string dir = m_processWorkingDirectory.find("rosmon") != std::string::npos ? m_processWorkingDirectory + "/core_dumps" : m_processWorkingDirectory;
+				std::string dir = m_processWorkingDirectory.find("/tmp/rosmon-node-") == std::string::npos ? m_processWorkingDirectory + "/core_dumps" : m_processWorkingDirectory;
 				args.push_back(strdup(dir.c_str()));
 			}
 		}
@@ -419,17 +415,6 @@ void NodeMonitor::communicate()
 		}
 #endif
 
-//		if(m_processWorkingDirectoryCreated)
-//		{
-//			if(rmdir(m_processWorkingDirectory.c_str()) != 0)
-//			{
-//				logTyped(LogEvent::Type::Warning, "Could not remove process working directory '{}' after process exit: {}",
-//					m_processWorkingDirectory, strerror(errno)
-//				);
-//			}
-//			m_processWorkingDirectory.clear();
-//		}
-
 		m_pid = -1;
 		m_fdWatcher->removeFD(m_fd);
 		close(m_fd);
@@ -575,7 +560,22 @@ void NodeMonitor::gatherCoredump(int signal)
 
 	// If the pattern is not absolute, it is relative to our node's cwd.
 	if(coreGlob[0] != '/')
-		coreGlob = m_processWorkingDirectory.find("rosmon") != std::string::npos ? m_processWorkingDirectory + "/core_dumps/" + coreGlob : m_processWorkingDirectory + "/" + coreGlob;
+		coreGlob = m_processWorkingDirectory.find("/tmp/rosmon-node-") == std::string::npos ? m_processWorkingDirectory + "/core_dumps/" + coreGlob : m_processWorkingDirectory + "/" + coreGlob;
+
+	time_t t = time(nullptr);
+	tm currentTime;
+	memset(&currentTime, 0, sizeof(currentTime));
+	localtime_r(&t, &currentTime);
+
+	char buf[256];
+	strftime(buf, sizeof(buf), "_%Y_%m_%d_%H_%M_%S", &currentTime);
+	std::string core_rename = coreGlob + "_" + m_launchNode->name() + std::string(buf);
+
+	if (rename(const_cast<char*>(coreGlob.c_str()), const_cast<char*>(core_rename.c_str())) != 0) {
+		logTyped(LogEvent::Type::Warning, "Error renaming core files");
+	}
+
+	coreGlob = core_rename;
 
 	log("Determined pattern '{}'", coreGlob);
 
@@ -607,19 +607,6 @@ void NodeMonitor::gatherCoredump(int signal)
 	ss << "gdb " << m_launchNode->executable() << " " << coreFile;
 
 	m_debuggerCommand = ss.str();
-
-	time_t t = time(nullptr);
-	tm currentTime;
-	memset(&currentTime, 0, sizeof(currentTime));
-	localtime_r(&t, &currentTime);
-
-	char buf[256];
-	strftime(buf, sizeof(buf), "_%Y_%m_%d_%H_%M_%S", &currentTime);
-	std::string core_rename = coreGlob + "_" + m_launchNode->name() + std::string(buf);
-        
-	if (rename(const_cast<char*>(coreGlob.c_str()), const_cast<char*>(core_rename.c_str())) != 0) {
-		perror("Error renaming core files");
-	}
 }
 
 void NodeMonitor::launchDebugger()
