@@ -386,7 +386,7 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 
 	if(!fullNamespace.empty())
 		node->setNamespace(fullNamespace);
-        
+
 	if ((m_respawnObey && respawn) || !m_respawnObey)
 	{
 		if (!m_respawnObey) 
@@ -412,7 +412,7 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 			node->setRespawnDelay(ros::WallDuration(seconds));
 		}
 	}
-        
+
 	if(required && ctx.parseBool(required, element->Row()))
 	{
 		node->setRequired(true);
