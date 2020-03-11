@@ -156,6 +156,12 @@ void LaunchConfig::setWorkingDirectory(std::string workingDirectory)
     m_workingDirectory = workingDirectory;
 }
 
+void LaunchConfig::setRespawnBehaviour(bool respawnAll, bool respawnObey)
+{
+    m_respawnAll = respawnAll;
+    m_respawnObey = respawnObey;
+}
+
 void LaunchConfig::parse(const std::string& filename, bool onlyArguments)
 {
 	m_rootContext.setFilename(filename);
@@ -386,10 +392,16 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 	if(!fullNamespace.empty())
 		node->setNamespace(fullNamespace);
 
-	if(respawn)
+	if ((m_respawnObey && respawn) || !m_respawnObey)
 	{
-		node->setRespawn(ctx.parseBool(respawn, element->Row()));
-
+		if (!m_respawnObey) 
+		{
+			node->setRespawn(m_respawnAll);
+		} 
+		else 
+		{
+			node->setRespawn(ctx.parseBool(respawn, element->Row()));
+		}
 		if(respawnDelay)
 		{
 			double seconds;

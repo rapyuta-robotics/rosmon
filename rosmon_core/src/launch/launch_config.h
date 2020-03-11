@@ -164,10 +164,10 @@ public:
 	void setArgument(const std::string& name, const std::string& value);
 
 	void setDefaultStopTimeout(double timeout);
-    void setDefaultCPULimit(double CPULimit);
-    void setDefaultMemoryLimit(uint64_t memoryLimit);
-    
-    void setWorkingDirectory(std::string);
+	void setDefaultCPULimit(double CPULimit);
+	void setDefaultMemoryLimit(uint64_t memoryLimit);
+	void setWorkingDirectory(std::string);
+	void setRespawnBehaviour(bool respawnAll, bool respawnObey);
 
 	void parse(const std::string& filename, bool onlyArguments = false);
 	void parseString(const std::string& input, bool onlyArguments = false);
@@ -241,6 +241,8 @@ private:
     double m_defaultCPULimit{DEFAULT_CPU_LIMIT};
     
     std::string m_workingDirectory;
+    bool m_respawnAll;
+    bool m_respawnObey;
 };
 
 }

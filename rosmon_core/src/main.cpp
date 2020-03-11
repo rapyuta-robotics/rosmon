@@ -77,6 +77,9 @@ void usage()
 		"                 Use GROUP as name of the launch group. By default, empty\n"
 		"  --launch-config=CONFIG\n"
 		"                 Use CONFIG as name of the launch config. By default, empty\n"
+		"  --respawn-attr=obey|force_true|force_false\n"
+		"                  Force all nodes in launch group to respawn or not respawn,\n"
+		"                  or obey launch file. By default, nodes will obey.\n"
 		"  --no-start      Don't automatically start the nodes in the beginning\n"
 		"  --stop-timeout=SECONDS\n"
 		"                  Kill a process if it is still running this long\n"
@@ -135,6 +138,7 @@ static const struct option OPTIONS[] = {
 	{"robot", required_argument, nullptr, 'r'},
 	{"launch-group", required_argument, nullptr, 'g'},
 	{"launch-config", required_argument, nullptr, 'z'},
+	{"respawn-attr", required_argument, nullptr, 'R'},
 	{"no-start", no_argument, nullptr, 'S'},
 	{"stop-timeout", required_argument, nullptr, 's'},
     {"disable-diagnostics", no_argument, nullptr, 'D'},
@@ -160,6 +164,8 @@ int main(int argc, char** argv)
 	Action action = ACTION_LAUNCH;
 	bool enableUI = true;
 	bool flushLog = false;
+	bool respawnAll = false;
+	bool respawnObey = true;
 	bool startNodes = true;
 	double stopTimeout = rosmon::launch::LaunchConfig::DEFAULT_STOP_TIMEOUT;
 	uint64_t memoryLimit = rosmon::launch::LaunchConfig::DEFAULT_MEMORY_LIMIT;
@@ -265,6 +271,18 @@ int main(int argc, char** argv)
 			case 'p':
 				fmt::print(stderr, "Prefix : {}", optarg);
 				diagnosticsPrefix = std::string(optarg);
+				break;
+			case 'R':
+				if (optarg && (strcmp(optarg,"force_true")==0 || strcmp(optarg,"force_false")==0))
+				{
+					respawnAll = strcmp(optarg,"force_true")==0;
+					respawnObey = false;
+				}
+				else if (optarg && !((strcmp(optarg,"obey")==0)))
+				{
+					fmt::print(stderr, "Bad value for --respawn-attr argument: '{}'\n", optarg);
+					return 1;
+				}
 				break;
 		}
 	}
@@ -381,6 +399,7 @@ int main(int argc, char** argv)
     config->setDefaultCPULimit(cpuLimit);
     config->setDefaultMemoryLimit(memoryLimit);
     config->setWorkingDirectory(logDir);
+    config->setRespawnBehaviour(respawnAll, respawnObey);
 
 	// Parse launch file arguments from command line
 	for(int i = firstArg; i < argc; ++i)
