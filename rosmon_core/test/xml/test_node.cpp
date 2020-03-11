@@ -82,6 +82,7 @@ TEST_CASE("node args", "[node]")
 TEST_CASE("node respawn", "[node]")
 {
 	LaunchConfig config;
+	config.setRespawnBehaviour(false, true);
 	config.parseString(R"EOF(
 		<launch>
 			<node name="test_node" pkg="rosmon_core" type="abort" respawn="true" respawn_delay="10" />
