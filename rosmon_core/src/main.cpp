@@ -12,6 +12,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <csignal>
@@ -67,7 +69,7 @@ void usage()
 		"  --flush-log     Flush logfile after writing an entry\n"
 		"  --flush-stdout  Flush stdout after writing an entry\n"
 		"  --help          This help screen\n"
-		"  --log=FILE      Write log file to FILE\n"
+		"  --log=DIR       Write log file to file in DIR\n"
 		"  --name=NAME     Use NAME as ROS node name. By default, an anonymous\n"
 		"                  name is chosen.\n"
 		"  --robot=ROBOT  Use ROBOT as name of robot publishing. By default, empty\n"
@@ -156,7 +158,7 @@ int main(int argc, char** argv)
 {
 	std::string name;
 	rosmon::LaunchInfo launchInfo;
-	std::string logFile;
+	std::string logDir;
 	std::string launchFilePath;
 
 	Action action = ACTION_LAUNCH;
@@ -198,7 +200,7 @@ int main(int argc, char** argv)
 				launchInfo.launch_config = optarg;
 				break;
 			case 'l':
-				logFile = optarg;
+				logDir = optarg;
 				break;
 			case 'L':
 				action = ACTION_LIST_ARGS;
@@ -344,9 +346,35 @@ int main(int argc, char** argv)
 
 		// Disable direct logging to stdout
 		ros::console::backend::function_print = nullptr;
+                
+		std::string logFile; 
 
 		// Open logger
-		if(logFile.empty())
+		if(!logDir.empty())
+		{
+                        if (logDir.back() == '/')
+                        {
+                                logDir.pop_back();
+                        }
+                        logDir = logDir + "/rosmon";
+                        if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
+                        {
+                                std::string dir = logDir + "/roslogs";
+                                if (chdir(dir.c_str()) == 0 || mkdir(dir.c_str(), 0777) == 0) 
+                                {
+                                        logFile = dir + "/" + launchInfo.launch_group + "_" + launchInfo.launch_config + "_" + launchInfo.robot_name + ".log";
+                                }
+                                else
+                                {
+					fmt::print(stderr, "Could not create rosmon/roslogs directory");
+                                }
+                        }
+                        else
+                        {
+				fmt::print(stderr, "Could not create rosmon directory");
+                        }
+		} 
+		else
 		{
 			// Log to /tmp by default
 
@@ -370,6 +398,7 @@ int main(int argc, char** argv)
 	config->setDefaultStopTimeout(stopTimeout);
     config->setDefaultCPULimit(cpuLimit);
     config->setDefaultMemoryLimit(memoryLimit);
+    config->setWorkingDirectory(logDir);
     config->setRespawnBehaviour(respawnAll, respawnObey);
 
 	// Parse launch file arguments from command line

@@ -151,6 +151,11 @@ void LaunchConfig::setDefaultMemoryLimit(uint64_t memoryLimit)
     m_defaultMemoryLimit = memoryLimit;
 }
 
+void LaunchConfig::setWorkingDirectory(std::string workingDirectory)
+{
+    m_workingDirectory = workingDirectory;
+}
+
 void LaunchConfig::setRespawnBehaviour(bool respawnAll, bool respawnObey)
 {
     m_respawnAll = respawnAll;
@@ -450,7 +455,9 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 	if(coredumpsEnabled)
 		node->setCoredumpsEnabled(ctx.parseBool(coredumpsEnabled, element->Row()));
 
-	if(cwd)
+	if (!m_workingDirectory.empty())
+		node->setWorkingDirectory(m_workingDirectory);
+	else if(cwd)
 		node->setWorkingDirectory(ctx.evaluate(cwd));
 
 	if(clearParams)
