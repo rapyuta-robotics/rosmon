@@ -207,7 +207,7 @@ private:
 	launch::Node::ConstPtr m_launchNode;
 
 	FDWatcher::Ptr m_fdWatcher;
-        
+
 	boost::circular_buffer<char> m_rxBuffer;
 
 	int m_pid = -1;

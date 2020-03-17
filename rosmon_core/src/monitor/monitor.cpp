@@ -34,7 +34,7 @@ namespace rosmon
 {
 namespace monitor
 {
-            
+
 Monitor::Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher, std::string logDir, bool flushLog, std::string launchGroup, std::string launchConfig)
  : m_config(std::move(config))
  , m_fdWatcher(std::move(watcher))
