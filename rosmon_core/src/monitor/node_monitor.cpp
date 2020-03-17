@@ -86,7 +86,7 @@ namespace rosmon
 namespace monitor
 {
 
-NodeMonitor::NodeMonitor(launch::Node::ConstPtr launchNode, FDWatcher::Ptr fdWatcher, ros::NodeHandle& nh)
+NodeMonitor::NodeMonitor(launch::Node::ConstPtr launchNode, FDWatcher::Ptr fdWatcher, ros::NodeHandle& nh, std::string logFile, bool flushLog)
  : m_launchNode(std::move(launchNode))
  , m_fdWatcher(std::move(fdWatcher))
  , m_rxBuffer(4096)
@@ -121,6 +121,8 @@ NodeMonitor::NodeMonitor(launch::Node::ConstPtr launchNode, FDWatcher::Ptr fdWat
 		g_coreIsRelative = (core_pattern[0] != '/');
 		g_coreIsRelative_valid = true;
 	}
+
+	logger.reset(new rosmon::Logger(logFile, flushLog));
 }
 
 NodeMonitor::~NodeMonitor()

@@ -7,6 +7,7 @@
 #include "../launch/node.h"
 #include "../fd_watcher.h"
 #include "../log_event.h"
+#include "../logger.h"
 
 #include <ros/node_handle.h>
 
@@ -44,9 +45,7 @@ public:
 	 * @param fdWatcher FDWatcher instance to register in
 	 * @param nh ros::NodeHandle to use for creating timers
 	 **/
-	NodeMonitor(
-		launch::Node::ConstPtr launchNode,
-		FDWatcher::Ptr fdWatcher, ros::NodeHandle& nh);
+	NodeMonitor(launch::Node::ConstPtr launchNode, FDWatcher::Ptr fdWatcher, ros::NodeHandle& nh, std::string logFile, bool flushLog);
 	~NodeMonitor();
 
 	//! @name Starting & stopping
@@ -172,6 +171,8 @@ public:
 	//! Node stop timeout
 	inline double stopTimeout() const
 	{ return m_launchNode->stopTimeout(); }
+        
+	boost::scoped_ptr<rosmon::Logger> logger;
 
 	/**
 	 * @brief Logging signal
@@ -206,7 +207,7 @@ private:
 	launch::Node::ConstPtr m_launchNode;
 
 	FDWatcher::Ptr m_fdWatcher;
-
+        
 	boost::circular_buffer<char> m_rxBuffer;
 
 	int m_pid = -1;

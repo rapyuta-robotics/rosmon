@@ -15,6 +15,9 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <yaml-cpp/yaml.h>
 
 #include <fmt/format.h>
@@ -31,17 +34,52 @@ namespace rosmon
 {
 namespace monitor
 {
-
-Monitor::Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher)
+            
+Monitor::Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher, std::string logDir, bool flushLog, std::string launchGroup, std::string launchConfig)
  : m_config(std::move(config))
  , m_fdWatcher(std::move(watcher))
  , m_ok(true)
 {
 	for(auto& launchNode : m_config->nodes())
 	{
-		auto node = std::make_shared<NodeMonitor>(launchNode, m_fdWatcher, m_nh);
+		// Setup a sane ROSCONSOLE_FORMAT if the user did not already
+		setenv("ROSCONSOLE_FORMAT", "[${function}]: ${message}", 0);
 
-		node->logMessageSignal.connect(logMessageSignal);
+		// Disable direct logging to stdout
+		ros::console::backend::function_print = nullptr;
+
+		std::string logFile; 
+
+		// Open logger
+		if(!logDir.empty())
+		{
+			if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
+			{
+				logFile = logDir + "/" + launchGroup + "_" + launchConfig + "_" + launchNode->name() + ".log";
+			}
+			else
+			{
+				fmt::print(stderr, "Could not create rosmon log");
+			}
+		} 
+		else
+		{
+			// Log to /tmp by default
+
+			time_t t = time(nullptr);
+			tm currentTime;
+			memset(&currentTime, 0, sizeof(currentTime));
+			localtime_r(&t, &currentTime);
+
+			char buf[256];
+			strftime(buf, sizeof(buf), "/tmp/rosmon_%Y_%m_%d_%H_%M_%S.log", &currentTime);
+
+			logFile = buf;
+		}
+
+		auto node = std::make_shared<NodeMonitor>(launchNode, m_fdWatcher, m_nh, logFile, flushLog);
+                
+		node->logMessageSignal.connect(boost::bind(&rosmon::Logger::log, node->logger.get(), _1));
 
 		if(launchNode->required())
 		{
