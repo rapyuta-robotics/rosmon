@@ -357,11 +357,11 @@ int main(int argc, char** argv)
                         {
                                 logDir.pop_back();
                         }
-			workDir = logDir = logDir + "/rosmon";
-			if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
-			{
-				logDir = logDir + "/roslogs";
-				if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
+                        workDir = logDir = logDir + "/rosmon";
+                        if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
+                        {
+                                logDir = logDir + "/roslogs";
+                                if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
                                 {
 					logFile = logDir + "/" + launchInfo.launch_group + "_" + launchInfo.launch_config + ".log";
                                 }
