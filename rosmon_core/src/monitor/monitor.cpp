@@ -43,7 +43,7 @@ Monitor::Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher, 
 	for(auto& launchNode : m_config->nodes())
 	{
 		// Setup a sane ROSCONSOLE_FORMAT if the user did not already
-		setenv("ROSCONSOLE_FORMAT", "[${function}]: ${message}", 0);
+		setenv("ROSCONSOLE_FORMAT", "[${function}] [${time}]: ${message}", 0);
 
 		// Disable direct logging to stdout
 		ros::console::backend::function_print = nullptr;
