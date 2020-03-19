@@ -40,7 +40,10 @@ UI::UI(monitor::Monitor* monitor, const FDWatcher::Ptr& fdWatcher)
  , m_selectedNode(-1)
 {
 	std::atexit(cleanup);
-	m_monitor->logMessageSignal.connect(boost::bind(&UI::log, this, _1));
+	for(auto& node : m_monitor->nodes())
+	{
+		node->logMessageSignal.connect(boost::bind(&UI::log, this, _1));
+	}
 
 	m_sizeTimer = ros::NodeHandle().createWallTimer(ros::WallDuration(2.0), boost::bind(&UI::checkWindowSize, this));
 	m_sizeTimer.start();

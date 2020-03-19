@@ -340,9 +340,10 @@ int main(int argc, char** argv)
 
 	// Setup logging
 	boost::scoped_ptr<rosmon::Logger> logger;
+	std::string workDir;
 	{
 		// Setup a sane ROSCONSOLE_FORMAT if the user did not already
-		setenv("ROSCONSOLE_FORMAT", "[${function}]: ${message}", 0);
+		setenv("ROSCONSOLE_FORMAT", "[${function}] [${time}]: ${message}", 0);
 
 		// Disable direct logging to stdout
 		ros::console::backend::function_print = nullptr;
@@ -356,13 +357,13 @@ int main(int argc, char** argv)
                         {
                                 logDir.pop_back();
                         }
-                        logDir = logDir + "/rosmon";
+                        workDir = logDir = logDir + "/rosmon";
                         if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
                         {
-                                std::string dir = logDir + "/roslogs";
-                                if (chdir(dir.c_str()) == 0 || mkdir(dir.c_str(), 0777) == 0) 
+                                logDir = logDir + "/roslogs";
+                                if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
                                 {
-                                        logFile = dir + "/" + launchInfo.launch_group + "_" + launchInfo.launch_config + "_" + launchInfo.robot_name + ".log";
+					logFile = logDir + "/" + launchInfo.launch_group + "_" + launchInfo.launch_config + ".log";
                                 }
                                 else
                                 {
@@ -398,7 +399,7 @@ int main(int argc, char** argv)
 	config->setDefaultStopTimeout(stopTimeout);
     config->setDefaultCPULimit(cpuLimit);
     config->setDefaultMemoryLimit(memoryLimit);
-    config->setWorkingDirectory(logDir);
+    config->setWorkingDirectory(workDir);
     config->setRespawnBehaviour(respawnAll, respawnObey);
 
 	// Parse launch file arguments from command line
@@ -491,7 +492,7 @@ int main(int argc, char** argv)
 
 	fmt::print("Running as '{}'\n", ros::this_node::getName());
 
-    rosmon::monitor::Monitor monitor(config, watcher);
+	rosmon::monitor::Monitor monitor(config, watcher, logDir, flushLog, launchInfo.launch_group, launchInfo.launch_config);
 	monitor.logMessageSignal.connect(boost::bind(&rosmon::Logger::log, logger.get(), _1));
 
 	fmt::print("\n\n");
@@ -515,7 +516,10 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		monitor.logMessageSignal.connect(logToStdout);
+		for(auto& node : monitor.nodes())
+		{
+			node->logMessageSignal.connect(logToStdout);
+		}
 	}
 
 	// ROS interface

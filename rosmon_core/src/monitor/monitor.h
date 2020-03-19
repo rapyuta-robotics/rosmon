@@ -25,7 +25,7 @@ class Monitor
 {
 public:
 public:
-	explicit Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher);
+	explicit Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher, std::string logDir, bool flushLog, std::string launchGroup, std::string launchConfig);
 
 	void setParameters();
 	void start();
