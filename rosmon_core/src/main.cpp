@@ -460,7 +460,7 @@ int main(int argc, char** argv)
 		// As last fallback, choose anonymous name.
 		if(name.empty())
 		{
-			name = "rosmon";
+			name = "rosmon_" + launchInfo.launch_group + "_" + launchInfo.launch_config + "_anon";
 			init_options |= ros::init_options::AnonymousName;
 		}
 
