@@ -156,10 +156,11 @@ void LaunchConfig::setWorkingDirectory(std::string workingDirectory)
     m_workingDirectory = workingDirectory;
 }
 
-void LaunchConfig::setRespawnBehaviour(bool respawnAll, bool respawnObey)
+void LaunchConfig::setRespawnBehaviour(bool respawnAll, bool respawnObey, bool respawnDefault)
 {
     m_respawnAll = respawnAll;
     m_respawnObey = respawnObey;
+    m_respawnDefault = respawnDefault;
 }
 
 void LaunchConfig::parse(const std::string& filename, bool onlyArguments)
@@ -402,21 +403,24 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 		{
 			node->setRespawn(ctx.parseBool(respawn, element->Row()));
 		}
-		if(respawnDelay)
-		{
-			double seconds;
-			try
-			{
-				seconds = boost::lexical_cast<double>(ctx.evaluate(respawnDelay));
-			}
-			catch(boost::bad_lexical_cast&)
-			{
-				throw ctx.error("bad respawn_delay value '{}'", respawnDelay);
-			}
+	} else {
+            node->setRespawn(m_respawnDefault);
+        }
+        
+        if(respawnDelay)
+        {
+                double seconds;
+                try
+                {
+                        seconds = boost::lexical_cast<double>(ctx.evaluate(respawnDelay));
+                }
+                catch(boost::bad_lexical_cast&)
+                {
+                        throw ctx.error("bad respawn_delay value '{}'", respawnDelay);
+                }
 
-			node->setRespawnDelay(ros::WallDuration(seconds));
-		}
-	}
+                node->setRespawnDelay(ros::WallDuration(seconds));
+        }
 
 	if(required && ctx.parseBool(required, element->Row()))
 	{
