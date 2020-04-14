@@ -80,8 +80,8 @@ void usage()
 		"  --respawn-attr=obey_default_true|obey_default_false|force_true|force_false\n"
 		"                  Force all nodes in launch group to respawn or not respawn,\n"
 		"                  or obey launch file and default to true/false if not \n"
-                "                  specified in launch file. By default, nodes will obey and \n"
-                "                  default to false.\n"
+		"                  specified in launch file. By default, nodes will obey and \n"
+		"                  default to false.\n"
 		"  --no-start      Don't automatically start the nodes in the beginning\n"
 		"  --stop-timeout=SECONDS\n"
 		"                  Kill a process if it is still running this long\n"
@@ -168,7 +168,7 @@ int main(int argc, char** argv)
 	bool flushLog = false;
 	bool respawnAll = false;
 	bool respawnObey = true;
-        bool respawnDefault = false;
+	bool respawnDefault = false;
 	bool startNodes = true;
 	double stopTimeout = rosmon::launch::LaunchConfig::DEFAULT_STOP_TIMEOUT;
 	uint64_t memoryLimit = rosmon::launch::LaunchConfig::DEFAULT_MEMORY_LIMIT;
@@ -281,10 +281,10 @@ int main(int argc, char** argv)
 					respawnAll = strcmp(optarg,"force_true") == 0;
 					respawnObey = false;
 				}
-                                else if (optarg && (strcmp(optarg,"obey_default_true") == 0 || strcmp(optarg,"obey_default_false") == 0))
-                                {
-                                        respawnDefault = strcmp(optarg,"obey_default_true") == 0;
-                                }
+				else if (optarg && (strcmp(optarg,"obey_default_true") == 0 || strcmp(optarg,"obey_default_false") == 0))
+				{
+					respawnDefault = strcmp(optarg,"obey_default_true") == 0;
+				}
 				else
 				{
 					fmt::print(stderr, "Bad value for --respawn-attr argument: '{}'\n", optarg);
