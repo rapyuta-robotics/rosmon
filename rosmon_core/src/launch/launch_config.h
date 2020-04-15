@@ -167,7 +167,7 @@ public:
 	void setDefaultCPULimit(double CPULimit);
 	void setDefaultMemoryLimit(uint64_t memoryLimit);
 	void setWorkingDirectory(std::string);
-	void setRespawnBehaviour(bool respawnAll, bool respawnObey);
+	void setRespawnBehaviour(bool respawnAll, bool respawnObey, bool respawnDefault);
 
 	void parse(const std::string& filename, bool onlyArguments = false);
 	void parseString(const std::string& input, bool onlyArguments = false);
@@ -243,6 +243,7 @@ private:
     std::string m_workingDirectory;
     bool m_respawnAll;
     bool m_respawnObey;
+    bool m_respawnDefault;
 };
 
 }

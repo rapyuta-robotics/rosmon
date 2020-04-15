@@ -77,9 +77,11 @@ void usage()
 		"                 Use GROUP as name of the launch group. By default, empty\n"
 		"  --launch-config=CONFIG\n"
 		"                 Use CONFIG as name of the launch config. By default, empty\n"
-		"  --respawn-attr=obey|force_true|force_false\n"
+		"  --respawn-attr=obey_default_true|obey_default_false|force_true|force_false\n"
 		"                  Force all nodes in launch group to respawn or not respawn,\n"
-		"                  or obey launch file. By default, nodes will obey.\n"
+		"                  or obey launch file and default to true/false if not \n"
+		"                  specified in launch file. By default, nodes will obey and \n"
+		"                  default to false.\n"
 		"  --no-start      Don't automatically start the nodes in the beginning\n"
 		"  --stop-timeout=SECONDS\n"
 		"                  Kill a process if it is still running this long\n"
@@ -166,6 +168,7 @@ int main(int argc, char** argv)
 	bool flushLog = false;
 	bool respawnAll = false;
 	bool respawnObey = true;
+	bool respawnDefault = false;
 	bool startNodes = true;
 	double stopTimeout = rosmon::launch::LaunchConfig::DEFAULT_STOP_TIMEOUT;
 	uint64_t memoryLimit = rosmon::launch::LaunchConfig::DEFAULT_MEMORY_LIMIT;
@@ -273,12 +276,16 @@ int main(int argc, char** argv)
 				diagnosticsPrefix = std::string(optarg);
 				break;
 			case 'R':
-				if (optarg && (strcmp(optarg,"force_true")==0 || strcmp(optarg,"force_false")==0))
+				if (optarg && (strcmp(optarg,"force_true") == 0 || strcmp(optarg,"force_false") == 0))
 				{
-					respawnAll = strcmp(optarg,"force_true")==0;
+					respawnAll = strcmp(optarg,"force_true") == 0;
 					respawnObey = false;
 				}
-				else if (optarg && !((strcmp(optarg,"obey")==0)))
+				else if (optarg && (strcmp(optarg,"obey_default_true") == 0 || strcmp(optarg,"obey_default_false") == 0))
+				{
+					respawnDefault = strcmp(optarg,"obey_default_true") == 0;
+				}
+				else
 				{
 					fmt::print(stderr, "Bad value for --respawn-attr argument: '{}'\n", optarg);
 					return 1;
@@ -400,7 +407,7 @@ int main(int argc, char** argv)
     config->setDefaultCPULimit(cpuLimit);
     config->setDefaultMemoryLimit(memoryLimit);
     config->setWorkingDirectory(workDir);
-    config->setRespawnBehaviour(respawnAll, respawnObey);
+    config->setRespawnBehaviour(respawnAll, respawnObey, respawnDefault);
 
 	// Parse launch file arguments from command line
 	for(int i = firstArg; i < argc; ++i)
