@@ -7,8 +7,6 @@
 #include <cstdlib>
 #include <ros/node_handle.h>
 
-#include <fmt/format.h>
-
 static unsigned int g_statusLines = 2;
 static std::string g_windowTitle;
 
@@ -158,7 +156,7 @@ void UI::drawStatusLine()
 		m_term.clearToEndOfLine();
 		m_color_bar.foreground();
 		for(int i = 0; i < m_columns; ++i)
-			fmt::print("▂");
+			fmtNoThrow::print("▂");
 		putchar('\n');
 
 		lines++;
@@ -265,7 +263,7 @@ void UI::drawStatusLine()
 				m_term.setStandardColors();
 
 			std::string label = node->name().substr(0, nodeWidth);
-			fmt::print("{:^{}}", label, nodeWidth);
+			fmtNoThrow::print("{:^{}}", label, nodeWidth);
 			m_term.setStandardColors();
 
 			// Primitive wrapping control
@@ -304,12 +302,12 @@ void UI::drawStatusLine()
 				else
 					m_style_nodeKey.use();
 
-				fmt::print("{:c}", key);
+				fmtNoThrow::print("{:c}", key);
 			}
 			else
 			{
 				m_term.setStandardColors();
-				fmt::print(" ");
+				fmtNoThrow::print(" ");
 			}
 
 			if(m_selectedNode == -1 || m_selectedNode == i)
@@ -351,9 +349,9 @@ void UI::drawStatusLine()
 
 			std::string label = node->name().substr(0, NODE_WIDTH);
 			if(i == m_selectedNode)
-				fmt::print("[{:^{}}]", label, NODE_WIDTH);
+				fmtNoThrow::print("[{:^{}}]", label, NODE_WIDTH);
 			else
-				fmt::print(" {:^{}} ", label, NODE_WIDTH);
+				fmtNoThrow::print(" {:^{}} ", label, NODE_WIDTH);
 			m_term.setStandardColors();
 
 			// Primitive wrapping control
@@ -427,12 +425,12 @@ void UI::log(const LogEvent& event)
 			}
 
 			if(line == 0)
-				fmt::print("{:>{}}:", event.source, m_nodeLabelWidth);
+				fmtNoThrow::print("{:>{}}:", event.source, m_nodeLabelWidth);
 			else
 			{
 				for(unsigned int i = 0; i < actualLabelWidth-1; ++i)
 					putchar(' ');
-				fmt::print("~ ");
+				fmtNoThrow::print("~ ");
 			}
 			m_term.setStandardColors();
 			m_term.clearToEndOfLine();
@@ -446,7 +444,7 @@ void UI::log(const LogEvent& event)
 	}
 	else
 	{
-		fmt::print("{:>{}}:", event.source, m_nodeLabelWidth);
+		fmtNoThrow::print("{:>{}}:", event.source, m_nodeLabelWidth);
 		m_term.setStandardColors();
 		m_term.clearToEndOfLine();
 		putchar(' ');

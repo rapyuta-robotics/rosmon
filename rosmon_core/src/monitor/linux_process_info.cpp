@@ -7,7 +7,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include <fmt/format.h>
+#include "../fmt_no_throw.h"
 
 namespace rosmon
 {
@@ -26,7 +26,7 @@ jiffies_t kernel_hz()
 		g_kernel_hz = sysconf(_SC_CLK_TCK);
 		if(g_kernel_hz == (jiffies_t)-1)
 		{
-			fmt::print(stderr, "Warning: Could not obtain value of USER_HZ."
+			fmtNoThrow::print(stderr, "Warning: Could not obtain value of USER_HZ."
 				"CPU load measurements might be inaccurate.\n"
 			);
 			g_kernel_hz = 100;
@@ -43,7 +43,7 @@ std::size_t page_size()
 		g_page_size = sysconf(_SC_PAGESIZE);
 		if(g_page_size == (std::size_t)-1)
 		{
-			fmt::print(stderr, "Warning: Could not obtain page size.");
+			fmtNoThrow::print(stderr, "Warning: Could not obtain page size.");
 			g_page_size = 4096;
 		}
 	}
