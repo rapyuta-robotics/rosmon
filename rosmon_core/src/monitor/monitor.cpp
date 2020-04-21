@@ -21,6 +21,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include "linux_process_info.h"
+#include "../fmt_no_throw.h"
 
 template<typename... Args>
 std::runtime_error error(const char* fmt, const Args& ... args)

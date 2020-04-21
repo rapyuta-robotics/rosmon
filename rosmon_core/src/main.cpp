@@ -28,6 +28,7 @@
 #include "package_registry.h"
 #include "fd_watcher.h"
 #include "logger.h"
+#include "fmt_no_throw.h"
 
 namespace fs = boost::filesystem;
 

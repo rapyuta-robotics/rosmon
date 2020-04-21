@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <ros/node_handle.h>
 
+#include "fmt_no_throw.h"
+
 static unsigned int g_statusLines = 2;
 static std::string g_windowTitle;
 
