@@ -26,7 +26,7 @@
 #include <boost/range.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <fmt/format.h>
+#include "../fmt_no_throw.h"
 
 #define TASK_COMM_LEN 16 // from linux/sched.h
 
@@ -274,7 +274,7 @@ void NodeMonitor::start()
 			for(const auto& part : cmd)
 				ss << part << " ";
 
-			fmt::print(stderr, "Could not execute '{}': {}\n", ss.str(), strerror(errno));
+			fmtNoThrow::print(stderr, "Could not execute '{}': {}\n", ss.str(), strerror(errno));
 		}
 
 		// We should not end up here...

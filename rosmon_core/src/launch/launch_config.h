@@ -5,6 +5,7 @@
 #define ROSMON_LAUNCH_LAUNCH_CONFIG_H
 
 #include "node.h"
+#include "../fmt_no_throw.h"
 
 #include <map>
 #include <vector>
@@ -15,8 +16,6 @@
 #include <XmlRpc.h>
 #include <tinyxml.h>
 #include <yaml-cpp/yaml.h>
-
-#include <fmt/format.h>
 
 namespace rosmon
 {
@@ -131,11 +130,11 @@ public:
 
 		if(m_currentLine >= 0)
 		{
-			fmt::print(stderr, "{}:{}: Warning: {}\n", m_filename, m_currentLine, msg);
+			fmtNoThrow::print(stderr, "{}:{}: Warning: {}\n", m_filename, m_currentLine, msg);
 		}
 		else
 		{
-			fmt::print(stderr, "{}: Warning: {}\n", m_filename, msg);
+			fmtNoThrow::print(stderr, "{}: Warning: {}\n", m_filename, msg);
 		}
 	}
 private:

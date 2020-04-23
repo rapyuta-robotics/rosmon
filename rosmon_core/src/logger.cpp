@@ -11,7 +11,7 @@
 
 #include <sys/time.h>
 
-#include <fmt/format.h>
+#include "fmt_no_throw.h"
 
 namespace rosmon
 {
@@ -51,7 +51,7 @@ void Logger::log(const LogEvent& event)
 	while(len != 0 && (event.message[len-1] == '\n' || event.message[len-1] == '\r'))
 		len--;
 
-	fmt::print(m_file, "{}.{:03d}: {:>20}: ",
+	fmtNoThrow::print(m_file, "{}.{:03d}: {:>20}: ",
 		timeString, tv.tv_usec / 1000,
 		event.source.c_str()
 	);

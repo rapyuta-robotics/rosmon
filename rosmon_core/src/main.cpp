@@ -20,8 +20,6 @@
 
 #include <iostream>
 
-#include <fmt/format.h>
-
 #include "launch/launch_config.h"
 #include "launch/bytes_parser.h"
 #include "monitor/monitor.h"
@@ -30,6 +28,7 @@
 #include "package_registry.h"
 #include "fd_watcher.h"
 #include "logger.h"
+#include "fmt_no_throw.h"
 
 namespace fs = boost::filesystem;
 
@@ -121,7 +120,7 @@ void logToStdout(const rosmon::LogEvent& event)
 
 	clean.resize(len);
 
-	fmt::print("{:>20}: {}\n", event.source, clean);
+	fmtNoThrow::print("{:>20}: {}\n", event.source, clean);
 
 	if(g_flushStdout)
 		fflush(stdout);
@@ -230,13 +229,13 @@ int main(int argc, char** argv)
 				}
 				catch(boost::bad_lexical_cast&)
 				{
-					fmt::print(stderr, "Bad value for --stop-timeout argument: '{}'\n", optarg);
+					fmtNoThrow::print(stderr, "Bad value for --stop-timeout argument: '{}'\n", optarg);
 					return 1;
 				}
 
 				if(stopTimeout < 0)
 				{
-					fmt::print(stderr, "Stop timeout cannot be negative\n");
+					fmtNoThrow::print(stderr, "Stop timeout cannot be negative\n");
 					return 1;
 				}
 				break;
@@ -250,13 +249,13 @@ int main(int argc, char** argv)
 				}
 				catch(boost::bad_lexical_cast&)
 				{
-					fmt::print(stderr, "Bad value for --cpu-limit argument: '{}'\n", optarg);
+					fmtNoThrow::print(stderr, "Bad value for --cpu-limit argument: '{}'\n", optarg);
 					return 1;
 				}
 
 				if(cpuLimit < 0)
 				{
-					fmt::print(stderr, "CPU Limit cannot be negative\n");
+					fmtNoThrow::print(stderr, "CPU Limit cannot be negative\n");
 					return 1;
 				}
 				break;
@@ -266,13 +265,13 @@ int main(int argc, char** argv)
 				std::tie(memoryLimit, ok) = rosmon::launch::parseMemory(optarg);
 				if(!ok)
 				{
-					fmt::print(stderr, "Bad value for --memory-limit argument: '{}'\n", optarg);
+					fmtNoThrow::print(stderr, "Bad value for --memory-limit argument: '{}'\n", optarg);
 					return 1;
 				}
 				break;
 			}
 			case 'p':
-				fmt::print(stderr, "Prefix : {}", optarg);
+				fmtNoThrow::print(stderr, "Prefix : {}", optarg);
 				diagnosticsPrefix = std::string(optarg);
 				break;
 			case 'R':
@@ -287,7 +286,7 @@ int main(int argc, char** argv)
 				}
 				else
 				{
-					fmt::print(stderr, "Bad value for --respawn-attr argument: '{}'\n", optarg);
+					fmtNoThrow::print(stderr, "Bad value for --respawn-attr argument: '{}'\n", optarg);
 					return 1;
 				}
 				break;
@@ -324,14 +323,14 @@ int main(int argc, char** argv)
 		std::string package = rosmon::PackageRegistry::getPath(packageName);
 		if(package.empty())
 		{
-			fmt::print(stderr, "Could not find path of package '{}'\n", packageName);
+			fmtNoThrow::print(stderr, "Could not find path of package '{}'\n", packageName);
 			return 1;
 		}
 
 		fs::path path = findFile(package, fileName);
 		if(path.empty())
 		{
-			fmt::print(stderr, "Could not find launch file '{}' in package '{}'\n",
+			fmtNoThrow::print(stderr, "Could not find launch file '{}' in package '{}'\n",
 				fileName, packageName
 			);
 			return 1;
@@ -374,12 +373,12 @@ int main(int argc, char** argv)
                                 }
                                 else
                                 {
-					fmt::print(stderr, "Could not create rosmon/roslogs directory");
+					fmtNoThrow::print(stderr, "Could not create rosmon/roslogs directory");
                                 }
                         }
                         else
                         {
-				fmt::print(stderr, "Could not create rosmon directory");
+				fmtNoThrow::print(stderr, "Could not create rosmon directory");
                         }
 		} 
 		else
@@ -416,7 +415,7 @@ int main(int argc, char** argv)
 
 		if(!arg)
 		{
-			fmt::print(stderr, "You specified a non-argument after an argument\n");
+			fmtNoThrow::print(stderr, "You specified a non-argument after an argument\n");
 			return 1;
 		}
 
@@ -438,7 +437,7 @@ int main(int argc, char** argv)
 	}
 	catch(rosmon::launch::ParseException& e)
 	{
-		fmt::print(stderr, "Could not load launch file: {}\n", e.what());
+		fmtNoThrow::print(stderr, "Could not load launch file: {}\n", e.what());
 		return 1;
 	}
 
@@ -478,36 +477,36 @@ int main(int argc, char** argv)
 
 	// Check connectivity to ROS master
 	{
-		fmt::print("ROS_MASTER_URI: '{}'\n", ros::master::getURI());
+		fmtNoThrow::print("ROS_MASTER_URI: '{}'\n", ros::master::getURI());
 		if(ros::master::check())
 		{
-			fmt::print("roscore is already running.\n");
+			fmtNoThrow::print("roscore is already running.\n");
 		}
 		else
 		{
-			fmt::print("roscore is not runnning.\n");
-			fmt::print("Waiting until it is up (abort with CTRL+C)...\n");
+			fmtNoThrow::print("roscore is not runnning.\n");
+			fmtNoThrow::print("Waiting until it is up (abort with CTRL+C)...\n");
 
 			while(!ros::master::check())
 				ros::WallDuration(0.5).sleep();
 
-			fmt::print("roscore is running now.\n");
+			fmtNoThrow::print("roscore is running now.\n");
 		}
 	}
 
 	ros::NodeHandle nh;
 
-	fmt::print("Running as '{}'\n", ros::this_node::getName());
+	fmtNoThrow::print("Running as '{}'\n", ros::this_node::getName());
 
 	rosmon::monitor::Monitor monitor(config, watcher, logDir, flushLog, launchInfo.launch_group, launchInfo.launch_config);
 	monitor.logMessageSignal.connect(boost::bind(&rosmon::Logger::log, logger.get(), _1));
 
-	fmt::print("\n\n");
+	fmtNoThrow::print("\n\n");
 	monitor.setParameters();
 
 	if(config->nodes().empty())
 	{
-		fmt::print("No ROS nodes to be launched. Finished...\n");
+		fmtNoThrow::print("No ROS nodes to be launched. Finished...\n");
 		return 0;
 	}
 

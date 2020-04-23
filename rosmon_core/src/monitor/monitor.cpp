@@ -20,9 +20,8 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <fmt/format.h>
-
 #include "linux_process_info.h"
+#include "../fmt_no_throw.h"
 
 template<typename... Args>
 std::runtime_error error(const char* fmt, const Args& ... args)
@@ -59,7 +58,7 @@ Monitor::Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher, 
 			}
 			else
 			{
-				fmt::print(stderr, "Could not create rosmon log");
+				fmtNoThrow::print(stderr, "Could not create rosmon log");
 			}
 		} 
 		else

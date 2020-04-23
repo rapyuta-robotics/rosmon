@@ -23,7 +23,7 @@
 #include <boost/regex.hpp>
 #include <boost/tokenizer.hpp>
 
-#include <fmt/format.h>
+#include "fmt_no_throw.h"
 
 namespace rosmon
 {
@@ -206,7 +206,7 @@ Terminal::Terminal()
 		}
 		else
 		{
-			fmt::print(stderr, "Warning: Unknown ROSMON_COLOR_MODE value: '{}'\n", overrideMode);
+			fmtNoThrow::print(stderr, "Warning: Unknown ROSMON_COLOR_MODE value: '{}'\n", overrideMode);
 		}
 	}
 	else
@@ -234,7 +234,7 @@ Terminal::Terminal()
 	int ret;
 	if(setupterm(termOverride, STDOUT_FILENO, &ret) != OK)
 	{
-		fmt::print("Could not setup the terminal. Disabling all colors...\n");
+		fmtNoThrow::print("Could not setup the terminal. Disabling all colors...\n");
 		return;
 	}
 
@@ -249,11 +249,11 @@ Terminal::Terminal()
 
 	m_bgColorStr = safe_tigetstr("setab");
 	if(m_bgColorStr.empty())
-		fmt::print("Your terminal does not support ANSI background!\n");
+		fmtNoThrow::print("Your terminal does not support ANSI background!\n");
 
 	m_fgColorStr = safe_tigetstr("setaf");
 	if(m_fgColorStr.empty())
-			fmt::print("Your terminal does not support ANSI foreground!\n");
+			fmtNoThrow::print("Your terminal does not support ANSI foreground!\n");
 
 	m_opStr = safe_tigetstr("op");
 	m_sgr0Str = safe_tigetstr("sgr0");
@@ -508,7 +508,7 @@ void Terminal::clearWindowTitle(const std::string& backup)
 	fputs("\033]30;%d : %n\007", stdout);
 
 	// screen/tmux style
-	fmt::print("\033k{}\033\\", backup);
+	fmtNoThrow::print("\033k{}\033\\", backup);
 }
 
 int Terminal::readLeftover()

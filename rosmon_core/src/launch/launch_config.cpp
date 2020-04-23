@@ -183,7 +183,7 @@ void LaunchConfig::parse(const std::string& filename, bool onlyArguments)
 	parseTopLevelAttributes(document.RootElement());
 
 	if(!onlyArguments)
-		fmt::print("Loaded launch file in {:f}s\n", (ros::WallTime::now() - start).toSec());
+		fmtNoThrow::print("Loaded launch file in {:f}s\n", (ros::WallTime::now() - start).toSec());
 }
 
 void LaunchConfig::parseString(const std::string& input, bool onlyArguments)
@@ -208,7 +208,7 @@ void LaunchConfig::parseString(const std::string& input, bool onlyArguments)
 	parseTopLevelAttributes(document.RootElement());
 
 	if(!onlyArguments)
-		fmt::print("Loaded launch file in {:f}s\n", (ros::WallTime::now() - start).toSec());
+		fmtNoThrow::print("Loaded launch file in {:f}s\n", (ros::WallTime::now() - start).toSec());
 }
 
 void LaunchConfig::parseTopLevelAttributes(TiXmlElement* element)
@@ -667,7 +667,7 @@ void LaunchConfig::parseParam(TiXmlElement* element, ParseContext ctx, ParamCont
 
 					if(ret == 0)
 					{
-						fmt::print("Still loading parameter '{}'...\n", fullName);
+						fmtNoThrow::print("Still loading parameter '{}'...\n", fullName);
 
 						timeout.tv_sec = 3;
 						continue;
