@@ -427,7 +427,7 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
         
 	if(shutdownHandler)
 	{
-		node->setShutdownHandler(shutdownHandler);
+		node->setShutdownHandler(ctx.evaluate(shutdownHandler));
 	}
 
 	if(required && ctx.parseBool(required, element->Row()))
