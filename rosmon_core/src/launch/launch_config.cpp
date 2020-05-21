@@ -298,6 +298,7 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 	const char* stopTimeout = element->Attribute("rosmon-stop-timeout");
     const char* memoryLimit = element->Attribute("rosmon-memory-limit");
     const char* cpuLimit = element->Attribute("rosmon-cpu-limit");
+    const char* shutdownHandler = element->Attribute("shutdown-handler");
 
 
 	if(!name || !pkg || !type)
@@ -423,6 +424,11 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 
 		node->setRespawnDelay(ros::WallDuration(seconds));
 	}
+        
+        if(shutdownHandler)
+        {
+		node->setShutdownHandler(shutdownHandler);
+        }
 
 	if(required && ctx.parseBool(required, element->Row()))
 	{
