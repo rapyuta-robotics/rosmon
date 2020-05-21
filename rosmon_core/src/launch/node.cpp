@@ -102,7 +102,7 @@ void Node::setRespawnDelay(const ros::WallDuration& respawnDelay)
 
 void Node::setShutdownHandler(const std::string& handler)
 {
-    m_shutdownHandler = handler;
+	m_shutdownHandler = handler;
 }
 
 void Node::setLaunchPrefix(const std::string& launchPrefix)

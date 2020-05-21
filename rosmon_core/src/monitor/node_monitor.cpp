@@ -336,8 +336,9 @@ void NodeMonitor::shutdown()
 {
 	if(m_pid != -1)
 	{
-		if (!m_launchNode->shutdownHandler().empty()) {
-                        logTyped(LogEvent::Type::Info, "Handler: {}", m_launchNode->shutdownHandler());
+		if (!m_launchNode->shutdownHandler().empty()) 
+		{
+			logTyped(LogEvent::Type::Info, "Handler: {}", m_launchNode->shutdownHandler());
 			ROS_INFO("Handler: %s", m_launchNode->shutdownHandler().c_str());
 			system(m_launchNode->shutdownHandler().c_str());
 		}

@@ -425,10 +425,10 @@ void LaunchConfig::parseNode(TiXmlElement* element, ParseContext ctx)
 		node->setRespawnDelay(ros::WallDuration(seconds));
 	}
         
-        if(shutdownHandler)
-        {
+	if(shutdownHandler)
+	{
 		node->setShutdownHandler(shutdownHandler);
-        }
+	}
 
 	if(required && ctx.parseBool(required, element->Row()))
 	{
