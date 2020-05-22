@@ -340,7 +340,7 @@ void NodeMonitor::shutdown()
 		{
 			logTyped(LogEvent::Type::Info, "Handler: {}", m_launchNode->shutdownHandler());
 			ROS_INFO("Handler: %s", m_launchNode->shutdownHandler().c_str());
-			system(m_launchNode->shutdownHandler().c_str());
+			int error = system(m_launchNode->shutdownHandler().c_str());
 		}
 		kill(-m_pid, SIGINT);
 	}
