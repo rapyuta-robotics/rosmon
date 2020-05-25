@@ -33,6 +33,8 @@ public:
 
 	void setRespawn(bool respawn);
 	void setRespawnDelay(const ros::WallDuration& respawnDelay);
+        
+	void setShutdownHandler(const std::string& handler);
 
 	void setLaunchPrefix(const std::string& launchPrefix);
 
@@ -75,6 +77,9 @@ public:
 
 	ros::WallDuration respawnDelay() const
 	{ return m_respawnDelay; }
+        
+	std::string shutdownHandler() const
+	{ return m_shutdownHandler; }
 
 	void setRequired(bool required);
 
@@ -117,6 +122,8 @@ private:
 
 	bool m_respawn;
 	ros::WallDuration m_respawnDelay;
+        
+	std::string m_shutdownHandler;
 
 	bool m_required;
 

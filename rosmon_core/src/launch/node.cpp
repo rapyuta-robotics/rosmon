@@ -100,6 +100,11 @@ void Node::setRespawnDelay(const ros::WallDuration& respawnDelay)
 	m_respawnDelay = respawnDelay;
 }
 
+void Node::setShutdownHandler(const std::string& handler)
+{
+	m_shutdownHandler = handler;
+}
+
 void Node::setLaunchPrefix(const std::string& launchPrefix)
 {
 	wordexp_t tokens;
