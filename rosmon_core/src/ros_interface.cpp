@@ -22,7 +22,7 @@ ROSInterface::ROSInterface(monitor::Monitor* monitor, LaunchInfo* launchInfo, bo
         m_nh = ros::NodeHandle();
     }
 
-	m_updateTimer = m_nh.createWallTimer(ros::WallDuration(1.0), boost::bind(&ROSInterface::update, this));
+	m_updateTimer = m_nh.createWallTimer(ros::WallDuration(3.0), boost::bind(&ROSInterface::update, this));
 
 	m_pub_state = m_nh.advertise<rosmon_msgs::State>("ros_monitor", 10, true);
 
