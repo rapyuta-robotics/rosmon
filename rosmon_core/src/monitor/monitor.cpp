@@ -77,7 +77,7 @@ Monitor::Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher, 
 		}
 
 		auto node = std::make_shared<NodeMonitor>(launchNode, m_fdWatcher, m_nh, logFile, flushLog);
-                
+
 		node->logMessageSignal.connect(boost::bind(&rosmon::Logger::log, node->logger.get(), _1));
 
 		if(launchNode->required())
