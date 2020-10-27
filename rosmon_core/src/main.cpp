@@ -369,7 +369,7 @@ int main(int argc, char** argv)
 				logDir = workDir + "/core_dumps";
 				if (!(chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0))
 				{
-					fmtNoThrow::print(stderr, "Could not create rosmon/core_dumps directory");
+					fmtNoThrow::print(stderr, "Could not create rosmon/core_dumps directory\n");
 				}
 
 				logDir = workDir + "/roslogs";
@@ -379,15 +379,15 @@ int main(int argc, char** argv)
 				}
 				else
 				{
-					fmtNoThrow::print(stderr, "Could not create rosmon/roslogs directory");
+					fmtNoThrow::print(stderr, "Could not create rosmon/roslogs directory\n");
 				}
 			}
 			else
 			{
-				fmtNoThrow::print(stderr, "Could not create rosmon directory");
+				fmtNoThrow::print(stderr, "Could not create rosmon directory\n");
 			}
 		} 
-		else
+		if (logFile.empty())
 		{
 			// Log to /tmp by default
 
@@ -401,7 +401,7 @@ int main(int argc, char** argv)
 
 			logFile = buf;
 		}
-
+		fmtNoThrow::print("Creating logfile {}\n", logFile);
 		logger.reset(new rosmon::Logger(logFile, flushLog));
 	}
 
