@@ -25,7 +25,7 @@ class Monitor
 {
 public:
 public:
-	explicit Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher, std::string logDir, bool flushLog, std::string launchGroup, std::string launchConfig);
+	explicit Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher, std::string logDir, bool flushLog, bool disableLog, std::string launchGroup, std::string launchConfig);
 
 	void setParameters();
 	void start();
@@ -58,7 +58,7 @@ private:
 	void log(const char* fmt, Args&& ... args);
 
 	template<typename... Args>
-	void logTyped(LogEvent::Type type, const char* fmt, Args&& ... args);
+	void logTyped(LogEvent::Type type, const std::string& fmt, Args&& ... args);
 
 	void handleRequiredNodeExit(const std::string& name);
 

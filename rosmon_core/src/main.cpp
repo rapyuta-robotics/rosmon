@@ -65,6 +65,7 @@ void usage()
 		"\n"
 		"Options:\n"
 		"  --disable-ui    Disable fancy terminal UI\n"
+		"  --disable-log   Disable writing to logfile\n"
 		"  --flush-log     Flush logfile after writing an entry\n"
 		"  --flush-stdout  Flush stdout after writing an entry\n"
 		"  --help	  This help screen\n"
@@ -130,6 +131,7 @@ void logToStdout(const rosmon::LogEvent& event)
 static const struct option OPTIONS[] = {
 	{"disable-ui", no_argument, nullptr, 'd'},
 	{"benchmark", no_argument, nullptr, 'b'},
+	{"disable-log", no_argument, nullptr, 'G'},
 	{"flush-log", no_argument, nullptr, 'f'},
 	{"flush-stdout", no_argument, nullptr, 'F'},
 	{"help", no_argument, nullptr, 'h'},
@@ -164,6 +166,7 @@ int main(int argc, char** argv)
 
 	Action action = ACTION_LAUNCH;
 	bool enableUI = true;
+	bool disableLog = false;
 	bool flushLog = false;
 	bool respawnAll = false;
 	bool respawnObey = true;
@@ -200,6 +203,9 @@ int main(int argc, char** argv)
 				break;
 			case 'z':
 				launchInfo.launch_config = optarg;
+				break;
+			case 'G':
+				disableLog = true;
 				break;
 			case 'l':
 				logDir = optarg;
@@ -372,37 +378,41 @@ int main(int argc, char** argv)
 					fmtNoThrow::print(stderr, "Could not create rosmon/core_dumps directory\n");
 				}
 
-				logDir = workDir + "/roslogs";
-				if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
-				{
-					logFile = logDir + "/" + launchInfo.launch_group + "_" + launchInfo.launch_config + ".log";
-				}
-				else
-				{
-					fmtNoThrow::print(stderr, "Could not create rosmon/roslogs directory\n");
+				if (!disableLog) {
+					logDir = workDir + "/roslogs";
+					if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
+					{
+						logFile = logDir + "/" + launchInfo.launch_group + "_" + launchInfo.launch_config + ".log";
+					}
+					else
+					{
+						fmtNoThrow::print(stderr, "Could not create rosmon/roslogs directory\n");
+					}
 				}
 			}
 			else
 			{
 				fmtNoThrow::print(stderr, "Could not create rosmon directory\n");
 			}
-		} 
-		if (logFile.empty())
-		{
-			// Log to /tmp by default
-
-			time_t t = time(nullptr);
-			tm currentTime;
-			memset(&currentTime, 0, sizeof(currentTime));
-			localtime_r(&t, &currentTime);
-
-			char buf[256];
-			strftime(buf, sizeof(buf), "/tmp/rosmon_%Y_%m_%d_%H_%M_%S.log", &currentTime);
-
-			logFile = buf;
 		}
-		fmtNoThrow::print("Creating logfile {}\n", logFile);
-		logger.reset(new rosmon::Logger(logFile, flushLog));
+		if (!disableLog) {
+			if (logFile.empty())
+			{
+				// Log to /tmp by default
+
+				time_t t = time(nullptr);
+				tm currentTime;
+				memset(&currentTime, 0, sizeof(currentTime));
+				localtime_r(&t, &currentTime);
+
+				char buf[256];
+				strftime(buf, sizeof(buf), "/tmp/rosmon_%Y_%m_%d_%H_%M_%S.log", &currentTime);
+
+				logFile = buf;
+			}
+			fmtNoThrow::print("Creating logfile {}\n", logFile);
+			logger.reset(new rosmon::Logger(logFile, flushLog));
+		}
 	}
 
 	rosmon::FDWatcher::Ptr watcher(new rosmon::FDWatcher);
@@ -504,8 +514,10 @@ int main(int argc, char** argv)
 
 	fmtNoThrow::print("Running as '{}'\n", ros::this_node::getName());
 
-	rosmon::monitor::Monitor monitor(config, watcher, logDir, flushLog, launchInfo.launch_group, launchInfo.launch_config);
-	monitor.logMessageSignal.connect(boost::bind(&rosmon::Logger::log, logger.get(), _1));
+	rosmon::monitor::Monitor monitor(config, watcher, logDir, flushLog, disableLog, launchInfo.launch_group, launchInfo.launch_config);
+	if (!disableLog) {
+		monitor.logMessageSignal.connect(boost::bind(&rosmon::Logger::log, logger.get(), _1));
+	}
 
 	fmtNoThrow::print("\n\n");
 	monitor.setParameters();

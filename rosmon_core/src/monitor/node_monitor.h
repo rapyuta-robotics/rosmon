@@ -45,7 +45,7 @@ public:
 	 * @param fdWatcher FDWatcher instance to register in
 	 * @param nh ros::NodeHandle to use for creating timers
 	 **/
-	NodeMonitor(launch::Node::ConstPtr launchNode, FDWatcher::Ptr fdWatcher, ros::NodeHandle& nh, std::string logFile, bool flushLog);
+	NodeMonitor(launch::Node::ConstPtr launchNode, FDWatcher::Ptr fdWatcher, ros::NodeHandle& nh, std::string logFile, bool flushLog, bool disableLog);
 	~NodeMonitor();
 
 	//! @name Starting & stopping
@@ -199,7 +199,7 @@ private:
 	void log(const char* format, Args&& ... args);
 
 	template<typename... Args>
-	void logTyped(LogEvent::Type type, const char* format, Args&& ... args);
+	void logTyped(LogEvent::Type type, const std::string& format, Args&& ... args);
 
 	void checkStop();
 	void gatherCoredump(int signal);

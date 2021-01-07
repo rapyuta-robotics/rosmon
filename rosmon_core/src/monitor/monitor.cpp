@@ -34,7 +34,7 @@ namespace rosmon
 namespace monitor
 {
 
-Monitor::Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher, std::string logDir, bool flushLog, std::string launchGroup, std::string launchConfig)
+Monitor::Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher, std::string logDir, bool flushLog, bool disableLog, std::string launchGroup, std::string launchConfig)
  : m_config(std::move(config))
  , m_fdWatcher(std::move(watcher))
  , m_ok(true)
@@ -47,38 +47,42 @@ Monitor::Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher, 
 		// Disable direct logging to stdout
 		ros::console::backend::function_print = nullptr;
 
-		std::string logFile; 
-
-		// Open logger
-		if(!logDir.empty())
-		{
-			if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
+		std::string logFile;
+		
+		if (!disableLog) {
+			// Open logger
+			if(!logDir.empty())
 			{
-				logFile = logDir + "/" + launchGroup + "_" + launchConfig + "_" + launchNode->name() + ".log";
-			}
+				if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
+				{
+					logFile = logDir + "/" + launchGroup + "_" + launchConfig + "_" + launchNode->name() + ".log";
+				}
+				else
+				{
+					fmtNoThrow::print(stderr, "Could not create rosmon log");
+				}
+			} 
 			else
 			{
-				fmtNoThrow::print(stderr, "Could not create rosmon log");
+				// Log to /tmp by default
+
+				time_t t = time(nullptr);
+				tm currentTime;
+				memset(&currentTime, 0, sizeof(currentTime));
+				localtime_r(&t, &currentTime);
+
+				char buf[256];
+				strftime(buf, sizeof(buf), "/tmp/rosmon_%Y_%m_%d_%H_%M_%S.log", &currentTime);
+
+				logFile = buf;
 			}
-		} 
-		else
-		{
-			// Log to /tmp by default
-
-			time_t t = time(nullptr);
-			tm currentTime;
-			memset(&currentTime, 0, sizeof(currentTime));
-			localtime_r(&t, &currentTime);
-
-			char buf[256];
-			strftime(buf, sizeof(buf), "/tmp/rosmon_%Y_%m_%d_%H_%M_%S.log", &currentTime);
-
-			logFile = buf;
 		}
 
-		auto node = std::make_shared<NodeMonitor>(launchNode, m_fdWatcher, m_nh, logFile, flushLog);
+		auto node = std::make_shared<NodeMonitor>(launchNode, m_fdWatcher, m_nh, logFile, flushLog, disableLog);
 
-		node->logMessageSignal.connect(boost::bind(&rosmon::Logger::log, node->logger.get(), _1));
+		if (!disableLog) {
+			node->logMessageSignal.connect(boost::bind(&rosmon::Logger::log, node->logger.get(), _1));
+		}
 
 		if(launchNode->required())
 		{
@@ -200,11 +204,19 @@ void Monitor::log(const char* fmt, Args&& ... args)
 }
 
 template<typename... Args>
-void Monitor::logTyped(LogEvent::Type type, const char* fmt, Args&& ... args)
+void Monitor::logTyped(LogEvent::Type type, const std::string& format, Args&& ... args)
 {
+	time_t t = time(nullptr);
+	tm currentTime;
+	memset(&currentTime, 0, sizeof(currentTime));
+	localtime_r(&t, &currentTime);
+
+	char buf[256];
+	strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &currentTime);
+	std::string time_stamped_format = "["+ toString(type) + " " + std::string(buf) + " rosmon]: "+ format;
 	logMessageSignal({
 		"[rosmon]",
-		fmt::format(fmt, std::forward<Args>(args)...),
+		fmt::format(time_stamped_format, std::forward<Args>(args)...),
 		type
 	});
 }

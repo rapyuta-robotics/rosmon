@@ -86,7 +86,7 @@ namespace rosmon
 namespace monitor
 {
 
-NodeMonitor::NodeMonitor(launch::Node::ConstPtr launchNode, FDWatcher::Ptr fdWatcher, ros::NodeHandle& nh, std::string logFile, bool flushLog)
+NodeMonitor::NodeMonitor(launch::Node::ConstPtr launchNode, FDWatcher::Ptr fdWatcher, ros::NodeHandle& nh, std::string logFile, bool flushLog, bool disableLog)
  : m_launchNode(std::move(launchNode))
  , m_fdWatcher(std::move(fdWatcher))
  , m_rxBuffer(4096)
@@ -121,8 +121,9 @@ NodeMonitor::NodeMonitor(launch::Node::ConstPtr launchNode, FDWatcher::Ptr fdWat
 		g_coreIsRelative = (core_pattern[0] != '/');
 		g_coreIsRelative_valid = true;
 	}
-
-	logger.reset(new rosmon::Logger(logFile, flushLog));
+	if (!disableLog) {
+		logger.reset(new rosmon::Logger(logFile, flushLog));
+	}
 }
 
 NodeMonitor::~NodeMonitor()
@@ -475,9 +476,17 @@ void NodeMonitor::log(const char* format, Args&& ... args)
 }
 
 template<typename... Args>
-void NodeMonitor::logTyped(LogEvent::Type type, const char* format, Args&& ... args)
+void NodeMonitor::logTyped(LogEvent::Type type, const std::string& format, Args&& ... args)
 {
-	logMessageSignal({name(), fmt::format(format, std::forward<Args>(args)...), type});
+	time_t t = time(nullptr);
+	tm currentTime;
+	memset(&currentTime, 0, sizeof(currentTime));
+	localtime_r(&t, &currentTime);
+
+	char buf[256];
+	strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &currentTime);
+	std::string time_stamped_format = "["+ toString(type) + " " + std::string(buf) + " rosmon]: "+ format;
+	logMessageSignal({name(), fmt::format(time_stamped_format, std::forward<Args>(args)...), type});
 }
 
 static boost::iterator_range<std::string::const_iterator>
@@ -612,11 +621,10 @@ void NodeMonitor::gatherCoredump(int signal)
 	std::string coreFile = results.gl_pathv[0];
 	globfree(&results);
 
-	logTyped(LogEvent::Type::Info, "Found core file '{}'", coreFile);
-
 	std::stringstream ss;
 
 	ss << "gdb " << m_launchNode->executable() << " " << coreFile;
+	logTyped(LogEvent::Type::Info, "Debug with '{}'", ss.str());
 
 	m_debuggerCommand = ss.str();
 }
