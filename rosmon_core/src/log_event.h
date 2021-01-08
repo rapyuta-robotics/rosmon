@@ -33,6 +33,19 @@ public:
 	Type type;
 };
 
+inline std::string toString(LogEvent::Type type) {
+	switch(type) {
+		case LogEvent::Type::Raw:
+			return "DEBUG";
+		case LogEvent::Type::Info:
+			return " INFO";
+		case LogEvent::Type::Warning:
+			return " WARN";
+		case LogEvent::Type::Error:
+			return "ERROR";
+	}
+}
+
 }
 
 #endif
