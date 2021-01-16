@@ -35,14 +35,14 @@ public:
 
 inline std::string toString(LogEvent::Type type) {
 	switch(type) {
-		case LogEvent::Type::Raw:
-			return "DEBUG";
 		case LogEvent::Type::Info:
-			return " INFO";
+			return "INFO";
 		case LogEvent::Type::Warning:
-			return " WARN";
+			return "WARN";
 		case LogEvent::Type::Error:
 			return "ERROR";
+		default:
+			return "DEBUG";
 	}
 }
 
