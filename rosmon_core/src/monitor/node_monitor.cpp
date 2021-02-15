@@ -183,11 +183,15 @@ void NodeMonitor::start()
 		tmpfile[sizeof(tmpfile)-1] = 0;
 		m_processWorkingDirectory = mkdtemp(tmpfile);
 	}
-	if (!(chdir(m_processWorkingDirectory.c_str()) == 0 
-			|| mkdir(m_processWorkingDirectory.c_str(), 0777) == 0
-			|| chdir(m_processWorkingDirectory.c_str()) == 0 ))
+	if (!(chdir(m_processWorkingDirectory.c_str()) == 0 || mkdir(m_processWorkingDirectory.c_str(), 0777) == 0))
 	{
 		logTyped(LogEvent::Type::Warning, "Could not create {}", m_processWorkingDirectory);
+		return;
+	}
+	if (chdir(m_processWorkingDirectory.c_str())!=0)
+	{
+		logTyped(LogEvent::Type::Warning, "Could not change to {}", m_processWorkingDirectory);
+		return;
 	}
 	ROS_INFO("rosmon: starting '%s'", m_launchNode->name().c_str());
 
