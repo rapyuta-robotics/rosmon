@@ -53,14 +53,7 @@ Monitor::Monitor(launch::LaunchConfig::ConstPtr config, FDWatcher::Ptr watcher, 
 			// Open logger
 			if(!logDir.empty())
 			{
-				if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
-				{
-					logFile = logDir + "/" + launchGroup + "_" + launchConfig + "_" + launchNode->name() + ".log";
-				}
-				else
-				{
-					fmtNoThrow::print(stderr, "Could not create rosmon log");
-				}
+				logFile = logDir + "/" + launchGroup + "_" + launchConfig + "_" + launchNode->name() + ".log";
 			} 
 			else
 			{

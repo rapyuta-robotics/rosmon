@@ -177,24 +177,18 @@ void NodeMonitor::start()
 		return;
 
 	if(m_launchNode->coredumpsEnabled() && g_coreIsRelative)
-	{
-		if (!m_processWorkingDirectory.empty()) 
-		{
-			std::string dir = m_processWorkingDirectory + "/core_dumps";
-			if (!(chdir(dir.c_str()) == 0 || mkdir(dir.c_str(), 0777) == 0))
-			{
-				logTyped(LogEvent::Type::Warning, "Could not create rosmon/core_dumps directory");
-			}
-		}
-		else 
-		{
-			char tmpfile[256];
-			strncpy(tmpfile, "/tmp/rosmon-node-XXXXXX", sizeof(tmpfile));
-			tmpfile[sizeof(tmpfile)-1] = 0;
-			m_processWorkingDirectory = mkdtemp(tmpfile);
-		}
+{
+		char tmpfile[256];
+		strncpy(tmpfile, "/tmp/rosmon-node-XXXXXX", sizeof(tmpfile));
+		tmpfile[sizeof(tmpfile)-1] = 0;
+		m_processWorkingDirectory = mkdtemp(tmpfile);
 	}
-
+	if (!(chdir(m_processWorkingDirectory.c_str()) == 0 
+			|| mkdir(m_processWorkingDirectory.c_str(), 0777) == 0
+			|| chdir(m_processWorkingDirectory.c_str()) == 0 ))
+	{
+		logTyped(LogEvent::Type::Warning, "Could not create {}", m_processWorkingDirectory);
+	}
 	ROS_INFO("rosmon: starting '%s'", m_launchNode->name().c_str());
 
 	if(!m_firstStart)
