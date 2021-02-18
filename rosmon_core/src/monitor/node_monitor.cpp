@@ -177,7 +177,7 @@ void NodeMonitor::start()
 		return;
 
 	if(m_launchNode->coredumpsEnabled() && g_coreIsRelative)
-{
+	{
 		char tmpfile[256];
 		strncpy(tmpfile, "/tmp/rosmon-node-XXXXXX", sizeof(tmpfile));
 		tmpfile[sizeof(tmpfile)-1] = 0;
