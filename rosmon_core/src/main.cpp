@@ -370,29 +370,32 @@ int main(int argc, char** argv)
 				logDir.pop_back();
 			}
 			workDir = logDir + "/rosmon";
-			if (chdir(workDir.c_str()) == 0 || mkdir(workDir.c_str(), 0777) == 0) 
-			{
+			try {
+				if ((!fs::exists(workDir)) && mkdir(workDir.c_str(), 0777) != 0) 
+				{
+					fmtNoThrow::print(stderr, "Could not create rosmon directory\n");
+					return 1;
+				}
 				logDir = workDir + "/core_dumps";
-				if (!(chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0))
+				if ((!fs::exists(logDir)) && mkdir(logDir.c_str(), 0777) != 0)
 				{
 					fmtNoThrow::print(stderr, "Could not create rosmon/core_dumps directory\n");
+					return 1;
 				}
 
 				if (!disableLog) {
 					logDir = workDir + "/roslogs";
-					if (chdir(logDir.c_str()) == 0 || mkdir(logDir.c_str(), 0777) == 0) 
-					{
-						logFile = logDir + "/" + launchInfo.launch_group + "_" + launchInfo.launch_config + ".log";
-					}
-					else
+					if ((!fs::exists(logDir)) && mkdir(logDir.c_str(), 0777) != 0) 
 					{
 						fmtNoThrow::print(stderr, "Could not create rosmon/roslogs directory\n");
+						return 1;
 					}
+					logFile = logDir + "/" + launchInfo.launch_group + "_" + launchInfo.launch_config + ".log";
 				}
-			}
-			else
-			{
-				fmtNoThrow::print(stderr, "Could not create rosmon directory\n");
+			} catch (fs::filesystem_error& ex) {
+				std::cout << ex.what() << std::endl;
+				std::cout << ex.code().value() << std::endl;
+				return 1;
 			}
 		}
 		if (!disableLog) {
