@@ -371,24 +371,20 @@ int main(int argc, char** argv)
 			}
 			workDir = logDir + "/rosmon";
 			try {
-				if ((!fs::exists(workDir)) && mkdir(workDir.c_str(), 0777) != 0) 
+				if (!fs::exists(workDir))
 				{
-					fmtNoThrow::print(stderr, "Could not create rosmon directory\n");
-					return 1;
+					fs::create_directories(workDir);
 				}
 				logDir = workDir + "/core_dumps";
-				if ((!fs::exists(logDir)) && mkdir(logDir.c_str(), 0777) != 0)
+				if (!fs::exists(logDir))
 				{
-					fmtNoThrow::print(stderr, "Could not create rosmon/core_dumps directory\n");
-					return 1;
+					fs::create_directories(logDir);
 				}
-
 				if (!disableLog) {
 					logDir = workDir + "/roslogs";
-					if ((!fs::exists(logDir)) && mkdir(logDir.c_str(), 0777) != 0) 
+					if (!fs::exists(logDir)) 
 					{
-						fmtNoThrow::print(stderr, "Could not create rosmon/roslogs directory\n");
-						return 1;
+						fs::create_directories(logDir);
 					}
 					logFile = logDir + "/" + launchInfo.launch_group + "_" + launchInfo.launch_config + ".log";
 				}
