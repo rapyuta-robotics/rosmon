@@ -251,6 +251,69 @@ TEST_CASE("node remap", "[remap]")
 	CHECK(remappings.at("private2") == "local_target");
 }
 
+TEST_CASE("node output attr", "[output]")
+{
+	SECTION("ignore")
+	{
+		LaunchConfig config;
+		config.setOutputAttrMode(LaunchConfig::OutputAttr::Ignore);
+		config.parseString(R"EOF(
+			<launch>
+				<node name="test_node" pkg="rosmon_core" type="abort" output="log">
+				</node>
+			</launch>
+		)EOF");
+
+		auto node = getNode(config.nodes(), "test_node");
+		CHECK(!node->stdoutDisplayed());
+	}
+
+	SECTION("obey")
+	{
+		LaunchConfig config;
+		config.setOutputAttrMode(LaunchConfig::OutputAttr::Obey);
+		config.parseString(R"EOF(
+			<launch>
+				<node name="test_node" pkg="rosmon_core" type="abort">
+				</node>
+			</launch>
+		)EOF");
+
+		auto node = getNode(config.nodes(), "test_node");
+		CHECK(!node->stdoutDisplayed());
+	}
+
+	SECTION("obey log")
+	{
+		LaunchConfig config;
+		config.setOutputAttrMode(LaunchConfig::OutputAttr::Obey);
+		config.parseString(R"EOF(
+			<launch>
+				<node name="test_node" pkg="rosmon_core" type="abort" output="log">
+				</node>
+			</launch>
+		)EOF");
+
+		auto node = getNode(config.nodes(), "test_node");
+		CHECK(!node->stdoutDisplayed());
+	}
+
+	SECTION("obey screen")
+	{
+		LaunchConfig config;
+		config.setOutputAttrMode(LaunchConfig::OutputAttr::Obey);
+		config.parseString(R"EOF(
+			<launch>
+				<node name="test_node" pkg="rosmon_core" type="abort" output="screen">
+				</node>
+			</launch>
+		)EOF");
+
+		auto node = getNode(config.nodes(), "test_node");
+		CHECK(node->stdoutDisplayed());
+	}
+}
+
 // rosmon extensions
 
 TEST_CASE("node enable-coredumps", "[node]")
@@ -270,4 +333,36 @@ TEST_CASE("node enable-coredumps", "[node]")
 
 	CHECK(getNode(nodes, "test_node_on")->coredumpsEnabled() == true);
 	CHECK(getNode(nodes, "test_node_off")->coredumpsEnabled() == false);
+}
+
+TEST_CASE("node memory/cpu limit", "[node]")
+{
+	LaunchConfig config;
+	config.parseString(R"EOF(
+		<launch>
+			<node name="test_node_default" pkg="rosmon_core" type="abort" />
+			<node name="test_node_custom" pkg="rosmon_core" type="abort" rosmon-memory-limit="200" rosmon-cpu-limit="0.2" />
+
+			<group rosmon-memory-limit="100" enable-coredumps="false">
+				<node name="test_node_grouped" pkg="rosmon_core" type="abort" />
+			</group>
+		</launch>
+	)EOF");
+
+	config.evaluateParameters();
+
+	auto nodes = config.nodes();
+	CAPTURE(nodes);
+
+	auto def = getNode(nodes, "test_node_default");
+	CHECK(def->memoryLimitByte() == rosmon::launch::DEFAULT_MEMORY_LIMIT);
+	CHECK(def->cpuLimit() == Approx(rosmon::launch::DEFAULT_CPU_LIMIT));
+
+	auto custom = getNode(nodes, "test_node_custom");
+	CHECK(custom->memoryLimitByte() == 200);
+	CHECK(custom->cpuLimit() == Approx(0.2f));
+
+	auto grouped = getNode(nodes, "test_node_grouped");
+	CHECK(grouped->memoryLimitByte() == 100);
+	CHECK(!grouped->coredumpsEnabled());
 }

@@ -143,17 +143,20 @@ public:
 	 *
 	 * @return Memory usage in bytes
 	 **/
-	inline double memory() const
+	inline uint64_t memory() const
 	{ return m_memory; }
 
 	inline unsigned int restartCount() const
 	{ return m_restartCount; }
 
-    inline uint64_t memoryLimit()const
-    { return m_launchNode->memoryLimitByte();}
+	inline int numRespawnsAllowed() const
+	{ return m_launchNode->numRespawnsAllowed(); }
 
-    inline float cpuLimit()const
-    { return m_launchNode->cpuLimit();}
+	inline uint64_t memoryLimit() const
+	{ return m_launchNode->memoryLimitByte();}
+
+	inline double cpuLimit() const
+	{ return m_launchNode->cpuLimit();}
 
 	//@}
 
@@ -165,6 +168,12 @@ public:
 	inline std::string namespaceString() const
 	{ return m_launchNode->namespaceString(); }
 
+	//! Full name including namespace
+	inline std::string fullName() const
+	{
+		return namespaceString() + "/" + name();
+	}
+
 	//! Node PID
 	inline int pid() const
 	{ return m_pid; }
@@ -172,6 +181,11 @@ public:
 	//! Node stop timeout
 	inline double stopTimeout() const
 	{ return m_launchNode->stopTimeout(); }
+
+	void setMuted(bool muted);
+
+	bool isMuted() const
+	{ return m_muted; }
 
 	/**
 	 * @brief Logging signal
@@ -193,6 +207,7 @@ private:
 	std::vector<std::string> composeCommand() const;
 
 	void communicate();
+	void communicateStderr();
 
 	template<typename... Args>
 	void log(const char* format, Args&& ... args);
@@ -208,9 +223,11 @@ private:
 	FDWatcher::Ptr m_fdWatcher;
 
 	boost::circular_buffer<char> m_rxBuffer;
+	boost::circular_buffer<char> m_stderrBuffer;
 
 	int m_pid = -1;
 	int m_fd = -1;
+	int m_stderrFD = -1;
 	int m_exitCode;
 
 	ros::WallTimer m_stopCheckTimer;
@@ -231,9 +248,12 @@ private:
 	uint64_t m_memory = 0;
 
 	std::string m_processWorkingDirectory;
+	std::string m_lastWorkingDirectory;
 	bool m_processWorkingDirectoryCreated = false;
 
 	bool m_firstStart = true;
+
+	bool m_muted = false;
 };
 
 }

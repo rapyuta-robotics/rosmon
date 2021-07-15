@@ -109,16 +109,16 @@ void UI::setupColors()
 		float r, g, b;
 		HUSLtoRGB(&r, &g, &b, hue, sat, lum);
 
-		r *= 255.0;
-		g *= 255.0;
-		b *= 255.0;
+		r *= 255.0f;
+		g *= 255.0f;
+		b *= 255.0f;
 
 		unsigned int color =
-			std::min(255, std::max<int>(0, r))
-			| (std::min(255, std::max<int>(0, g)) << 8)
-			| (std::min(255, std::max<int>(0, b)) << 16);
+			std::min(255, std::max(0, static_cast<int>(r)))
+			| (std::min(255, std::max(0, static_cast<int>(g))) << 8)
+			| (std::min(255, std::max(0, static_cast<int>(b))) << 16);
 
-		m_nodeColorMap[m_monitor->nodes()[i]->name()] = ChannelInfo{&m_term, color};
+		m_nodeColorMap[m_monitor->nodes()[i]->fullName()] = ChannelInfo{&m_term, color};
 	}
 }
 
@@ -141,6 +141,21 @@ namespace
 	private:
 		unsigned int m_column = 0;
 	};
+}
+
+std::string UI::nodeDisplayName(monitor::NodeMonitor& node, std::size_t maxWidth)
+{
+	std::string fullName;
+	if(node.namespaceString().empty())
+		fullName = node.name();
+	else
+		fullName = node.namespaceString() + "/" + node.name();
+
+	// Strip initial / to save space
+	if(!fullName.empty() && fullName[0] == '/')
+		fullName = fullName.substr(1);
+
+	return fullName.substr(0, maxWidth);
 }
 
 void UI::drawStatusLine()
@@ -196,12 +211,12 @@ void UI::drawStatusLine()
 				default: state = "<UNKNOWN>"; break;
 			}
 
-			print("Node '{}' {}. Actions: ", selectedNode->name(), state);
+			print("Node '{}' {}. Actions: ", selectedNode->fullName(), state);
 			printKey("s", "start");
 			printKey("k", "stop");
 			printKey("d", "debug");
 
-			if(isMuted(selectedNode->name()))
+			if(selectedNode->isMuted())
 				printKey("u", "unmute");
 			else
 				printKey("m", "mute");
@@ -209,9 +224,21 @@ void UI::drawStatusLine()
 		else
 		{
 			printKey("A-Z", "Node actions");
+			printKey("F6", "Start all");
+			printKey("F7", "Stop all");
+			printKey("F8", "Toggle WARN+ only");
 			printKey("F9", "Mute all");
 			printKey("F10", "Unmute all");
 			printKey("/", "Node search");
+
+			if(stderrOnly())
+			{
+				print("      ");
+				m_term.setSimpleForeground(Terminal::Black);
+				m_term.setSimpleBackground(Terminal::Magenta);
+				print("! WARN+ output only !");
+				m_style_bar.use();
+			}
 
 			if(anyMuted())
 			{
@@ -245,7 +272,7 @@ void UI::drawStatusLine()
 
 		std::size_t nodeWidth = SEARCH_NODE_WIDTH;
 		for(auto& nodeIdx : m_searchNodes)
-			nodeWidth = std::max(nodeWidth, nodes[nodeIdx]->name().length());
+			nodeWidth = std::max(nodeWidth, nodeDisplayName(*nodes[nodeIdx]).length());
 
 		// If it doesn't fit on one line, constrain to SEARCH_NODE_WIDTH
 		if(m_searchNodes.size() * (nodeWidth+1) >= static_cast<std::size_t>(m_columns-1))
@@ -261,7 +288,7 @@ void UI::drawStatusLine()
 			else
 				m_term.setStandardColors();
 
-			std::string label = node->name().substr(0, nodeWidth);
+			std::string label = nodeDisplayName(*node, nodeWidth);
 			fmt::print("{:^{}}", label, nodeWidth);
 			m_term.setStandardColors();
 
@@ -296,7 +323,7 @@ void UI::drawStatusLine()
 			if(m_selectedNode == -1)
 			{
 				// Print key with grey background
-				if(isMuted(node->name()))
+				if(node->isMuted())
 					m_style_nodeKeyMuted.use();
 				else
 					m_style_nodeKey.use();
@@ -346,7 +373,7 @@ void UI::drawStatusLine()
 				}
 			}
 
-			std::string label = node->name().substr(0, NODE_WIDTH);
+			std::string label = nodeDisplayName(*node, NODE_WIDTH);
 			if(i == m_selectedNode)
 				fmt::print("[{:^{}}]", label, NODE_WIDTH);
 			else
@@ -392,9 +419,15 @@ void UI::drawStatusLine()
 
 void UI::log(const LogEvent& event)
 {
-	if(isMuted(event.source))
+	// Is this node muted? Muted events go into the log, but are not shown in
+	// the UI.
+	if(event.muted)
 		return;
-	
+
+	// Are we supposed to show stdout?
+	if(event.channel == LogEvent::Channel::Stdout && (!event.showStdout || stderrOnly()))
+		return;
+
 	const std::string& clean = event.message;
 
 	auto it = m_nodeColorMap.find(event.source);
@@ -473,12 +506,19 @@ void UI::log(const LogEvent& event)
 	m_term.setStandardColors();
 	m_term.clearToEndOfLine();
 	fflush(stdout);
+
+	scheduleUpdate();
 }
 
 void UI::update()
 {
 	if(!m_term.interactive())
 		return;
+
+	if(!m_refresh_required)
+		return;
+
+	m_refresh_required = false;
 
 	// Disable automatic linewrap. This prevents ugliness on terminal resize.
 	m_term.setLineWrap(false);
@@ -505,7 +545,7 @@ void UI::checkWindowSize()
 
 	std::size_t w = 20;
 	for(const auto& node : m_monitor->nodes())
-		w = std::max(w, node->name().size());
+		w = std::max(w, node->fullName().size());
 
 	m_nodeLabelWidth = std::min<unsigned int>(w, m_columns/4);
 }
@@ -530,6 +570,10 @@ void UI::checkTerminal()
 
 void UI::handleKey(int c)
 {
+	// Instead of trying to figure out when exactly we need a redraw, just
+	// redraw on every keystroke.
+	scheduleUpdate();
+
 	// Are we in search mode?
 	if(m_searchActive)
 	{
@@ -611,7 +655,7 @@ void UI::handleKey(int c)
 		for(unsigned int i = 0; i < nodes.size(); ++i)
 		{
 			const auto& node = nodes[i];
-			auto idx = node->name().find(m_searchString);
+			auto idx = nodeDisplayName(*node).find(m_searchString);
 			if(idx != std::string::npos)
 				m_searchNodes.push_back(i);
 		}
@@ -623,6 +667,18 @@ void UI::handleKey(int c)
 	{
 		int nodeIndex = -1;
 
+		if(c == Terminal::SK_F6)
+		{
+			startAll();
+			return;
+		}
+
+		if(c == Terminal::SK_F7)
+		{
+			stopAll();
+			return;
+		}
+
 		// Check for Mute all keys first
 		if(c == Terminal::SK_F9)
 		{
@@ -633,6 +689,13 @@ void UI::handleKey(int c)
 		if(c == Terminal::SK_F10)
 		{
 			unmuteAll();
+			return;
+		}
+
+		// Check for Stderr Only Toggle
+		if(c == Terminal::SK_F8)
+		{
+			toggleStderrOnly();
 			return;
 		}
 
@@ -675,15 +738,61 @@ void UI::handleKey(int c)
 				node->launchDebugger();
 				break;
 			case 'm':
-				mute(node->name());
+				node->setMuted(true);
 				break;
 			case 'u':
-				unmute(node->name());
+				node->setMuted(false);
 				break;
 		}
 
 		m_selectedNode = -1;
 	}
+}
+
+bool UI::anyMuted() const
+{
+	return std::any_of(m_monitor->nodes().begin(), m_monitor->nodes().end(), [](const monitor::NodeMonitor::Ptr& n){
+		return n->isMuted();
+	});
+}
+
+void UI::startAll()
+{
+	for(auto& n : m_monitor->nodes())
+		n->start();
+}
+
+void UI::stopAll()
+{
+	for(auto& n : m_monitor->nodes())
+		n->stop();
+}
+
+void UI::muteAll()
+{
+	for(auto& n : m_monitor->nodes())
+		n->setMuted(true);
+}
+
+void UI::unmuteAll()
+{
+	for(auto& n : m_monitor->nodes())
+		n->setMuted(false);
+}
+
+void UI::scheduleUpdate()
+{
+	m_refresh_required = true;
+}
+
+bool UI::stderrOnly()
+{
+	return m_stderr_only;
+}
+
+void UI::toggleStderrOnly()
+{
+	m_stderr_only = !m_stderr_only;
 }
 
 }
