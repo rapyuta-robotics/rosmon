@@ -1,3 +1,0 @@
-<launch>
-	<node name="abort" pkg="rosmon_core" type="abort" />
-</launch>

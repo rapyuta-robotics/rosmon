@@ -11,13 +11,9 @@ developers.
 
 ## Installation & Quick start
 
-Official `rosmon` packages are available. On ROS Kinetic or Melodic (Ubuntu) simply do:
+Official `rosmon` are available. On ROS Kinetic or Melodic (Ubuntu) simply do:
 
-    sudo apt install ros-${ROS_DISTRO}-rosmon
-
-In case you don't need the rqt GUI, you can install the core package only:
-
-    sudo apt install ros-${ROS_DISTRO}-rosmon-core
+    sudo apt install ros-${ROSDISTRO}-rosmon
 
 Afterwards, try
 

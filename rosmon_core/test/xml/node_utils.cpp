@@ -25,12 +25,6 @@ rosmon::launch::Node::Ptr getNode(const std::vector<rosmon::launch::Node::Ptr>& 
 	rosmon::launch::Node::Ptr ret;
 
 	INFO("Looking for node '" << name << "' in namespace '" << namespaceString << "'");
-	INFO("Node list:");
-
-	std::stringstream ss;
-	for(auto& node : nodes)
-		ss << " - '" << node->name() << "' (ns '" << node->namespaceString() << "')\n";
-	INFO(ss.str());
 
 	for(auto& node : nodes)
 	{

@@ -37,7 +37,7 @@ namespace substitutions
 		std::string base = name;
 		boost::trim(base);
 
-		return context.anonName(base);
+		return context.config()->anonName(base);
 	}
 
 	std::string arg(const std::string& name, const ParseContext& context)

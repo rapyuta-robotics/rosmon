@@ -23,7 +23,6 @@ static const struct option OPTIONS[] = {
 	{"coredump-relative", required_argument, nullptr, 'C'},
 	{"tty", required_argument, nullptr, 't'},
 	{"run", required_argument, nullptr, 'r'},
-	{"stderr", required_argument, nullptr, 's'},
 
 	{nullptr, 0, nullptr, 0}
 };
@@ -42,8 +41,6 @@ Options:
   --coredump               Enable coredump collection
   --coredump-relative=DIR  Coredumps should go to DIR
   --run <executable>       All arguments after this one are passed on
-  --tty TTY                TTY fd for stdout
-  --stderr FD              file descriptor for stderr
 )EOS");
 }
 
@@ -56,7 +53,6 @@ int main(int argc, char** argv)
 	int nodeOptionsBegin = -1;
 
 	int tty = -1;
-	int stderr_fd = -1;
 
 	while(true)
 	{
@@ -101,9 +97,6 @@ int main(int argc, char** argv)
 				nodeExecutable = optarg;
 				nodeOptionsBegin = optind;
 				break;
-			case 's':
-				stderr_fd = atoi(optarg);
-				break;
 		}
 
 		if(nodeExecutable)
@@ -116,18 +109,9 @@ int main(int argc, char** argv)
 	if(tty < 0)
 		throw std::invalid_argument("Need --tty option");
 
-	if(stderr_fd < 0)
-		throw std::invalid_argument("Need --stderr option");
-
 	if(login_tty(tty) != 0)
 	{
 		perror("Could not call login_tty()");
-		std::abort();
-	}
-
-	if(dup2(stderr_fd, STDERR_FILENO) < 0)
-	{
-		perror("Could not call dup2() for stderr");
 		std::abort();
 	}
 

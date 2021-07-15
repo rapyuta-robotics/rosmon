@@ -24,13 +24,6 @@ public:
 		Error
 	};
 
-	enum class Channel
-	{
-		NotApplicable,
-		Stdout,
-		Stderr
-	};
-
 	LogEvent(std::string source, std::string message, Type type = Type::Raw)
 	 : source{std::move(source)}, message{std::move(message)}, type{type}
 	{}
@@ -38,9 +31,6 @@ public:
 	std::string source;
 	std::string message;
 	Type type;
-	bool muted = false;
-	Channel channel = Channel::NotApplicable;
-	bool showStdout = true;
 };
 
 }

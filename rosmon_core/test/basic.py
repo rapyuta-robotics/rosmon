@@ -46,7 +46,7 @@ class BasicTest(unittest.TestCase):
 		except rospy.ROSException:
 			self.fail('Did not get state msg on /rosmon_uut/state' + repr(rospy.client.get_published_topics()))
 
-		self.assertEqual(len(state.nodes), 4)
+		self.assertEqual(len(state.nodes), 3)
 
 		test1 = [ n for n in state.nodes if n.name == 'test1' ]
 		self.assertEqual(len(test1), 1)
@@ -97,7 +97,7 @@ class BasicTest(unittest.TestCase):
 		self.assertEqual(self.get_param("/test1/private_param2"), "hello_world")
 
 	def test_multiLine(self):
-		self.assertEqual(self.get_param("multiple_lines1"), "first_line  second_line")
+		self.assertEqual(self.get_param("multiple_lines1"), "first_line second_line")
 		self.assertEqual(self.get_param("multiple_lines2"), "first_line second_line")
 
 	def test_yaml(self):
