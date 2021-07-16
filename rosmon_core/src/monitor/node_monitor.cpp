@@ -27,8 +27,13 @@
 #include <boost/algorithm/string.hpp>
 
 #include "../fmt_no_throw.h"
+#include <boost/filesystem.hpp>
+
+#include <fmt/format.h>
 
 #define TASK_COMM_LEN 16 // from linux/sched.h
+
+namespace fs = boost::filesystem;
 
 namespace
 {
@@ -77,8 +82,9 @@ namespace
 		return final_act<F>(std::forward<F>(f));
 	}
 
+	static bool g_corePatternAnalyzed = false;
 	static bool g_coreIsRelative = true;
-	static bool g_coreIsRelative_valid = false;
+	static bool g_coreIsSystemd = false;
 }
 
 namespace rosmon
@@ -90,16 +96,18 @@ NodeMonitor::NodeMonitor(launch::Node::ConstPtr launchNode, FDWatcher::Ptr fdWat
  : m_launchNode(std::move(launchNode))
  , m_fdWatcher(std::move(fdWatcher))
  , m_rxBuffer(4096)
+ , m_stderrBuffer(4096)
  , m_exitCode(0)
  , m_command(CMD_STOP) // we start in stopped state
  , m_restarting(false)
+ , m_muted(m_launchNode->isMuted())
 {
 	m_restartTimer = nh.createWallTimer(ros::WallDuration(1.0), boost::bind(&NodeMonitor::start, this), false, false);
 	m_stopCheckTimer = nh.createWallTimer(ros::WallDuration(m_launchNode->stopTimeout()), boost::bind(&NodeMonitor::checkStop, this));
 
 	m_processWorkingDirectory = m_launchNode->workingDirectory();
 
-	if(!g_coreIsRelative_valid)
+	if(!g_corePatternAnalyzed)
 	{
 		char core_pattern[256];
 		int core_fd = open("/proc/sys/kernel/core_pattern", O_RDONLY | O_CLOEXEC);
@@ -119,7 +127,11 @@ NodeMonitor::NodeMonitor(launch::Node::ConstPtr launchNode, FDWatcher::Ptr fdWat
 		}
 
 		g_coreIsRelative = (core_pattern[0] != '/');
-		g_coreIsRelative_valid = true;
+
+		if(std::string(core_pattern).find("systemd-coredump") != std::string::npos)
+			g_coreIsSystemd = true;
+
+		g_corePatternAnalyzed = true;
 	}
 	if (!disableLog) {
 		logger.reset(new rosmon::Logger(logFile, flushLog));
@@ -193,10 +205,11 @@ void NodeMonitor::start()
 		logTyped(LogEvent::Type::Warning, "Could not change to {}", m_processWorkingDirectory);
 		return;
 	}
-	ROS_INFO("rosmon: starting '%s'", m_launchNode->name().c_str());
+
+	ROS_INFO("rosmon: starting '%s'", fullName().c_str());
 
 	if(!m_firstStart)
-		logMessageSignal({"[rosmon]", fmt::format("Starting node {}", name()), LogEvent::Type::Info});
+		logMessageSignal({"[rosmon]", fmt::format("Starting node {}", fullName()), LogEvent::Type::Info});
 
 	m_firstStart = false;
 
@@ -217,6 +230,12 @@ void NodeMonitor::start()
 	if(openpty(&master, &slave, nullptr, nullptr, nullptr) == -1)
 		throw error("Could not open pseudo terminal for child process: {}", strerror(errno));
 
+	// For stderr, we open a second PTY
+	int stderr_master, stderr_slave;
+
+	if(openpty(&stderr_master, &stderr_slave, nullptr, nullptr, nullptr) == -1)
+		throw error("Could not open stderr pseudo terminal for child process: {}", strerror(errno));
+
 	// Compose args
 	{
 		args.push_back(strdup("rosrun"));
@@ -225,6 +244,9 @@ void NodeMonitor::start()
 
 		args.push_back(strdup("--tty"));
 		args.push_back(strdup(fmt::format("{}", slave).c_str()));
+
+		args.push_back(strdup("--stderr"));
+		args.push_back(strdup(fmt::format("{}", stderr_slave).c_str()));
 
 		if(!m_launchNode->namespaceString().empty())
 		{
@@ -266,6 +288,7 @@ void NodeMonitor::start()
 	if(pid == 0)
 	{
 		close(master);
+		close(stderr_master);
 
 		if(execvp("rosrun", args.data()) != 0)
 		{
@@ -282,10 +305,13 @@ void NodeMonitor::start()
 
 	// Parent
 	close(slave);
+	close(stderr_slave);
 
 	m_fd = master;
+	m_stderrFD = stderr_master;
 	m_pid = pid;
 	m_fdWatcher->registerFD(m_fd, boost::bind(&NodeMonitor::communicate, this));
+	m_fdWatcher->registerFD(m_stderrFD, boost::bind(&NodeMonitor::communicateStderr, this));
 }
 
 void NodeMonitor::stop(bool restart)
@@ -301,7 +327,7 @@ void NodeMonitor::stop(bool restart)
 	if(!running())
 		return;
 
-	logMessageSignal({"[rosmon]", fmt::format("Stopping node {}", name()), LogEvent::Type::Info});
+	logMessageSignal({"[rosmon]", fmt::format("Stopping node {}", fullName()), LogEvent::Type::Info});
 
 	// kill(-pid) sends the signal to all processes in the process group
 	kill(-m_pid, SIGINT);
@@ -376,8 +402,73 @@ NodeMonitor::State NodeMonitor::state() const
 	return STATE_CRASHED;
 }
 
+void NodeMonitor::communicateStderr()
+{
+	auto handleByte = [&](char c){
+		m_stderrBuffer.push_back(c);
+		if(c == '\n')
+		{
+			m_stderrBuffer.push_back(0);
+			m_stderrBuffer.linearize();
+
+			auto one = m_stderrBuffer.array_one();
+
+			LogEvent event{fullName(), one.first};
+			event.muted = isMuted();
+			event.channel = LogEvent::Channel::Stderr;
+
+			logMessageSignal(std::move(event));
+
+			m_stderrBuffer.clear();
+		}
+	};
+
+	char buf[1024];
+	int bytes = read(m_stderrFD, buf, sizeof(buf));
+
+	if(bytes == 0 || (bytes < 0 && errno == EIO))
+	{
+		// Flush out any remaining stderr
+		if(!m_stderrBuffer.empty())
+			handleByte('\n');
+
+		m_fdWatcher->removeFD(m_stderrFD);
+        close(m_stderrFD);
+        m_stderrFD = -1;
+		return; // handled in communicate()
+	}
+
+	if(bytes < 0)
+		throw error("{}: Could not read: {}", fullName(), strerror(errno));
+
+	for(int i = 0; i < bytes; ++i)
+	{
+		handleByte(buf[i]);
+	}
+}
+
 void NodeMonitor::communicate()
 {
+	auto handleByte = [&](char c){
+		m_rxBuffer.push_back(c);
+		if(c == '\n')
+		{
+			m_rxBuffer.push_back(0);
+			m_rxBuffer.linearize();
+
+			auto one = m_rxBuffer.array_one();
+
+			LogEvent event{fullName(), one.first};
+			event.muted = isMuted();
+			event.channel = LogEvent::Channel::Stdout;
+			event.showStdout = m_launchNode->stdoutDisplayed();
+
+			logMessageSignal(std::move(event));
+
+			m_rxBuffer.clear();
+		}
+	};
+
 	char buf[1024];
 	int bytes = read(m_fd, buf, sizeof(buf));
 
@@ -393,20 +484,24 @@ void NodeMonitor::communicate()
 			if(errno == EINTR || errno == EAGAIN)
 				continue;
 
-			throw error("{}: Could not waitpid(): {}", m_launchNode->name(), strerror(errno));
+			throw error("{}: Could not waitpid(): {}", fullName(), strerror(errno));
 		}
+
+		// Flush out any remaining stdout
+		if(!m_rxBuffer.empty())
+			handleByte('\n');
 
 		if(WIFEXITED(status))
 		{
 			auto type = (WEXITSTATUS(status) == 0) ? LogEvent::Type::Info : LogEvent::Type::Error;
-			logTyped(type, "{} exited with status {}", name(), WEXITSTATUS(status));
-			ROS_INFO("rosmon: %s exited with status %d", name().c_str(), WEXITSTATUS(status));
+			logTyped(type, "{} exited with status {}", fullName(), WEXITSTATUS(status));
+			ROS_INFO("rosmon: %s exited with status %d", fullName().c_str(), WEXITSTATUS(status));
 			m_exitCode = WEXITSTATUS(status);
 		}
 		else if(WIFSIGNALED(status))
 		{
-			logTyped(LogEvent::Type::Error, "{} died from signal {}", name(), WTERMSIG(status));
-			ROS_ERROR("rosmon: %s died from signal %d", name().c_str(), WTERMSIG(status));
+			logTyped(LogEvent::Type::Error, "{} died from signal {}", fullName(), WTERMSIG(status));
+			ROS_ERROR("rosmon: %s died from signal %d", fullName().c_str(), WTERMSIG(status));
 			m_exitCode = 255;
 		}
 
@@ -415,12 +510,12 @@ void NodeMonitor::communicate()
 		{
 			if(!m_launchNode->launchPrefix().empty())
 			{
-				logTyped(LogEvent::Type::Info, "{} used launch-prefix, not collecting core dump as it is probably useless.", name());
+				logTyped(LogEvent::Type::Info, "{} used launch-prefix, not collecting core dump as it is probably useless.", fullName());
 			}
 			else
 			{
 				// We have a chance to find the core dump...
-				logTyped(LogEvent::Type::Info, "{} left a core dump", name());
+				logTyped(LogEvent::Type::Info, "{} left a core dump", fullName());
 				gatherCoredump(WTERMSIG(status));
 			}
 		}
@@ -443,34 +538,24 @@ void NodeMonitor::communicate()
 			m_restarting = true;
 		}
 
-		exitedSignal(name());
+		exitedSignal(fullName());
 
 		return;
 	}
 
 	if(bytes < 0)
-		throw error("{}: Could not read: {}", name(), strerror(errno));
+		throw error("{}: Could not read: {}", fullName(), strerror(errno));
 
 	for(int i = 0; i < bytes; ++i)
 	{
-		m_rxBuffer.push_back(buf[i]);
-		if(buf[i] == '\n')
-		{
-			m_rxBuffer.push_back(0);
-			m_rxBuffer.linearize();
-
-			auto one = m_rxBuffer.array_one();
-			logMessageSignal({name(), one.first});
-
-			m_rxBuffer.clear();
-		}
+		handleByte(buf[i]);
 	}
 }
 
 template<typename... Args>
 void NodeMonitor::log(const char* format, Args&& ... args)
 {
-	logMessageSignal({name(), fmt::format(format, std::forward<Args>(args)...)});
+	logMessageSignal({fullName(), fmt::format(format, std::forward<Args>(args)...)});
 }
 
 template<typename... Args>
@@ -484,7 +569,7 @@ void NodeMonitor::logTyped(LogEvent::Type type, const std::string& format, Args&
 	char buf[256];
 	strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &currentTime);
 	std::string time_stamped_format = "["+ toString(type) + " " + std::string(buf) + " rosmon]: "+ format;
-	logMessageSignal({name(), fmt::format(time_stamped_format, std::forward<Args>(args)...), type});
+	logMessageSignal({fullName(), fmt::format(time_stamped_format, std::forward<Args>(args)...), type});
 }
 
 static boost::iterator_range<std::string::const_iterator>
@@ -501,6 +586,14 @@ corePatternFormatFinder(std::string::const_iterator begin, std::string::const_it
 
 void NodeMonitor::gatherCoredump(int signal)
 {
+	// If systemd-coredump is enabled, our job is easy
+	if(g_coreIsSystemd)
+	{
+		m_debuggerCommand = fmt::format("coredumpctl gdb COREDUMP_PID={}", m_pid);
+		return;
+	}
+
+	// Otherwise we have to find the core ourselves...
 	char core_pattern[256];
 	int core_fd = open("/proc/sys/kernel/core_pattern", O_RDONLY | O_CLOEXEC);
 	if(core_fd < 0)
@@ -688,6 +781,11 @@ void NodeMonitor::endStatUpdate(double elapsedTimeInTicks)
 {
 	m_userLoad = m_userTime / elapsedTimeInTicks;
 	m_systemLoad = m_systemTime / elapsedTimeInTicks;
+}
+
+void NodeMonitor::setMuted(bool muted)
+{
+	m_muted = muted;
 }
 
 }
