@@ -41,6 +41,8 @@ Node::Node(std::string name, std::string package, std::string type)
  , m_stopTimeout(5.0)
  , m_memoryLimitByte(15e6)
  , m_cpuLimit(0.05)
+ , m_muted(false)
+ , m_stdoutDisplayed(true)
 {
 	m_executable = PackageRegistry::getExecutable(m_package, m_type);
 }
@@ -104,6 +106,10 @@ void Node::setShutdownHandler(const std::string& handler)
 {
 	m_shutdownHandler = handler;
 }
+void Node::setNumRespawnsAllowed(int numRespawnsAllowed)
+{
+	m_numRespawnsAllowed = numRespawnsAllowed;
+}
 
 void Node::setLaunchPrefix(const std::string& launchPrefix)
 {
@@ -152,12 +158,22 @@ void Node::setStopTimeout(double timeout)
 
 void Node::setMemoryLimit(uint64_t memoryLimitByte)
 {
-    m_memoryLimitByte = memoryLimitByte;
+	m_memoryLimitByte = memoryLimitByte;
 }
 
-void Node::setCPULimit(float cpuLimit)
+void Node::setCPULimit(double cpuLimit)
 {
-    m_cpuLimit = cpuLimit;
+	m_cpuLimit = cpuLimit;
+}
+
+void Node::setMuted(bool muted)
+{
+	m_muted = muted;
+}
+
+void Node::setStdoutDisplayed(bool displayed)
+{
+	m_stdoutDisplayed = displayed;
 }
 
 }
