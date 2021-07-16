@@ -169,3 +169,120 @@ test_ns:
 	double param4 = getTypedParam<double>(params, "/test_ns/param4", XmlRpc::XmlRpcValue::TypeDouble);
 	CHECK(param4 == Approx(3.14169));
 }
+
+TEST_CASE("merge keys", "[rosparam]")
+{
+	LaunchConfig config;
+	config.parseString(R"EOF(
+		<launch>
+<rosparam>
+common: &amp;common
+  param1: true
+  param2: 5.0
+  param3: hello
+commonclass: &amp;commonclass
+  testclass:
+    &lt;&lt;: *common
+    testparam: 140
+class1:
+  &lt;&lt;: *common
+  param4: 514
+class2:
+  param1: false
+  &lt;&lt;: *common
+class3:
+  &lt;&lt;: *common
+  param1: false
+class4:
+  &lt;&lt;: *common
+  param1: 5
+  param2: test
+  param3: 0.1
+class5:
+  &lt;&lt;: *commonclass
+  param4: sub
+class6:
+  &lt;&lt;: *commonclass
+  testclass:
+    param2: 10.0
+</rosparam>
+		</launch>
+	)EOF");
+
+	config.evaluateParameters();
+
+	CAPTURE(config.parameters());
+
+	auto& params = config.parameters();
+
+	// Class 1 test simple addition
+	std::string class_ns = "/class1";
+	checkTypedParam<bool>(params, class_ns + "/param1", XmlRpc::XmlRpcValue::TypeBoolean, true);
+	checkTypedParam<double>(params, class_ns + "/param2", XmlRpc::XmlRpcValue::TypeDouble, 5.0);
+	checkTypedParam<std::string>(params, class_ns + "/param3", XmlRpc::XmlRpcValue::TypeString, "hello");
+	checkTypedParam<int>(params, class_ns + "/param4", XmlRpc::XmlRpcValue::TypeInt, 514);
+
+	// Class 2 test override pre-assigned
+	class_ns = "/class2";
+	checkTypedParam<bool>(params, class_ns + "/param1", XmlRpc::XmlRpcValue::TypeBoolean, false);
+	checkTypedParam<double>(params, class_ns + "/param2", XmlRpc::XmlRpcValue::TypeDouble, 5.0);
+	checkTypedParam<std::string>(params, class_ns + "/param3", XmlRpc::XmlRpcValue::TypeString, "hello");
+
+	// Class 3 test override post-assigned
+	class_ns = "/class3";
+	checkTypedParam<bool>(params, class_ns + "/param1", XmlRpc::XmlRpcValue::TypeBoolean, false);
+	checkTypedParam<double>(params, class_ns + "/param2", XmlRpc::XmlRpcValue::TypeDouble, 5.0);
+	checkTypedParam<std::string>(params, class_ns + "/param3", XmlRpc::XmlRpcValue::TypeString, "hello");
+
+	// Class 4 test typechange overrides
+	class_ns = "/class4";
+	checkTypedParam<int>(params, class_ns + "/param1", XmlRpc::XmlRpcValue::TypeInt, 5);
+	checkTypedParam<std::string>(params, class_ns + "/param2", XmlRpc::XmlRpcValue::TypeString, "test");
+	checkTypedParam<double>(params, class_ns + "/param3", XmlRpc::XmlRpcValue::TypeDouble, 0.1);
+
+	// Class 5 test nested merge
+	class_ns = "/class5";
+	checkTypedParam<bool>(params, class_ns + "/testclass/param1", XmlRpc::XmlRpcValue::TypeBoolean, true);
+	checkTypedParam<double>(params, class_ns + "/testclass/param2", XmlRpc::XmlRpcValue::TypeDouble, 5.0);
+	checkTypedParam<std::string>(params, class_ns + "/testclass/param3", XmlRpc::XmlRpcValue::TypeString, "hello");
+	checkTypedParam<int>(params, class_ns + "/testclass/testparam", XmlRpc::XmlRpcValue::TypeInt, 140);
+	checkTypedParam<std::string>(params, class_ns + "/param4", XmlRpc::XmlRpcValue::TypeString, "sub");
+
+	// Class 6 test override on nested merge
+	class_ns = "/class6";
+	checkTypedParam<bool>(params, class_ns + "/testclass/param1", XmlRpc::XmlRpcValue::TypeBoolean, true);
+	checkTypedParam<double>(params, class_ns + "/testclass/param2", XmlRpc::XmlRpcValue::TypeDouble, 10.0);
+	checkTypedParam<std::string>(params, class_ns + "/testclass/param3", XmlRpc::XmlRpcValue::TypeString, "hello");
+	checkTypedParam<int>(params, class_ns + "/testclass/testparam", XmlRpc::XmlRpcValue::TypeInt, 140);
+}
+
+TEST_CASE("rosparam /param", "[rosparam]")
+{
+	LaunchConfig config;
+	config.parseString(R"EOF(
+		<launch>
+<rosparam ns="ns">
+/fake_param: 20.0
+namespace:
+  /other_param: 10.0
+  /global_ns:
+    third_param: 5.0
+</rosparam>
+		</launch>
+	)EOF");
+
+	config.evaluateParameters();
+
+	CAPTURE(config.parameters());
+
+	auto& params = config.parameters();
+
+	double param1 = getTypedParam<double>(params, "/fake_param", XmlRpc::XmlRpcValue::TypeDouble);
+	CHECK(param1 == Approx(20.0));
+
+	double param2 = getTypedParam<double>(params, "/other_param", XmlRpc::XmlRpcValue::TypeDouble);
+	CHECK(param2 == Approx(10.0));
+
+	double param3 = getTypedParam<double>(params, "/global_ns/third_param", XmlRpc::XmlRpcValue::TypeDouble);
+	CHECK(param3 == Approx(5.0));
+}
